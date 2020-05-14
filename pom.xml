@@ -1,49 +1,78 @@
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-	<modelVersion>4.0.0</modelVersion>
-	
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.1.5.RELEASE</version>
-		<relativePath/> <!-- lookup parent from repository -->
-	</parent>
-	
-	<groupId>eu.arrowhead</groupId>	
-	<artifactId>client-skeleton</artifactId>
-	<version>4.1.3.3</version>
-	<packaging>pom</packaging>
-	<name>client-skeleton-java-spring</name>
-	<description>Arrowhead Client Skeleton using Spring Boot</description>
-	
-	<url>https://github.com/arrowhead-f/client-java-spring</url>
-	<licenses>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  	<modelVersion>4.0.0</modelVersion>
+  	<parent>
+  		<groupId>org.springframework.boot</groupId>
+    	<artifactId>spring-boot-starter-parent</artifactId>
+    	<version>2.1.5.RELEASE</version>
+    	<relativePath/> <!-- lookup parent from repository -->
+  	</parent>
+
+  	<groupId>se.ltu.workflow</groupId>
+  	<artifactId>workflow-executor</artifactId>
+  	<version>1.0-SNAPSHOT</version>
+  	<packaging>jar</packaging>
+  	<name>workflow-executor</name>
+  	<description>Workflow Executor Arrowhead system</description>
+
+  	<url>https://github.com/jaivgar/workflow-executor</url>
+
+  	<licenses>
     	<license>
-	     	<name>Apache License, Version 2.0</name>
-	     	<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-	   </license>
+      		<name>Apache License, Version 2.0</name>
+      		<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    	</license>
   	</licenses>
-	
-	<modules>
-	    <module>client-skeleton-consumer</module>
-	    <module>client-skeleton-provider</module>
-	    <module>client-skeleton-subscriber</module>
-	    <module>client-skeleton-publisher</module>
-  	</modules>
-		
-	<dependencies>
-		<dependency>
-			<groupId>eu.arrowhead</groupId>
-			<artifactId>client-library</artifactId>
-			<version>4.1.3.11</version>
-		</dependency>		
-	</dependencies>
-	
-	<build>
-		<plugins>
-			<plugin>
-    			<groupId>org.springframework.boot</groupId>
-    			<artifactId>spring-boot-maven-plugin</artifactId>
-  			</plugin>  			  			
-  		</plugins>
+
+	<properties>
+    	<maven.compiler.release>11</maven.compiler.release>
+   	</properties>
+
+  	<dependencies>
+    	<dependency>
+      		<groupId>junit</groupId>
+      		<artifactId>junit</artifactId>
+      		<scope>test</scope>
+    	</dependency>
+
+    	<dependency>
+      		<groupId>eu.arrowhead</groupId>
+      		<artifactId>client-library</artifactId>
+      		<version>4.1.3.11</version>
+    	</dependency>
+  	</dependencies>
+
+  	<build>
+    	<plugins>
+	  		<plugin>
+	    		<groupId>org.springframework.boot</groupId>
+	    		<artifactId>spring-boot-maven-plugin</artifactId>
+  	  		</plugin>
+  	  
+	  	  	<plugin>
+	 			<artifactId>maven-resources-plugin</artifactId>
+		    	<executions>
+		      		<execution>
+	          			<id>copy-resources</id>
+	          			<phase>validate</phase>
+	           			<goals>
+	              			<goal>copy-resources</goal>
+			    		</goals>
+	           			<configuration>
+	              			<outputDirectory>${basedir}/target</outputDirectory>
+	              			<resources>
+	              				<resource>
+	                  				<directory>src/main/resources</directory>
+	                  				<includes>
+	            						<include>application.properties</include>
+	               	  				</includes>
+	               				</resource>
+	              			</resources>
+	          			</configuration>
+	          		</execution>
+	      		</executions>
+	      	</plugin> 			  			  			
+   		</plugins>
   	</build>	
+
 </project>
