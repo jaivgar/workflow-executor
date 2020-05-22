@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -65,6 +66,10 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
     @Value(ClientCommonConstants.$CLIENT_SERVER_PORT_WD)
     private int mySystemPort;
     
+    /*@Autowired
+    ServletWebServerApplicationContext server;
+    */
+    
     private final Logger logger = LogManager.getLogger(WExecutorApplicationListener.class);
     
     //=================================================================================================
@@ -74,6 +79,12 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
     @Override
     protected void customInit(final ContextRefreshedEvent event) {
 
+        /* Testing the server
+         * logger.info("The Web Server was initialized at port:" + 
+         * server.getWebServer().getPort());
+         */
+        
+        
         //Checking the availability of necessary core systems
         checkCoreSystemReachability(CoreSystem.SERVICE_REGISTRY);
         if (sslEnabled) {
@@ -120,7 +131,10 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
     public void customDestroy() {
         //Unregister services
         arrowheadService.unregisterServiceFromServiceRegistry(WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION);
+        logger.info("Unregistered Service: " + WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION);
+        
         arrowheadService.unregisterServiceFromServiceRegistry(WExecutorConstants.START_WORKFLOW_SERVICE_DEFINITION);
+        logger.info("Unregistered Service: " + WExecutorConstants.START_WORKFLOW_SERVICE_DEFINITION);
     }
 
     //=================================================================================================
@@ -192,6 +206,8 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
         if(Objects.isNull(response)){
             throw new ArrowheadException("Response from Service Registry is empty");
         }
+        
+        logger.info("System: " + response.getProvider().getSystemName() +" has registered Service: " + response.getServiceDefinition().getServiceDefinition());
     }
     
 }
