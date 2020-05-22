@@ -76,17 +76,19 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
 
         //Checking the availability of necessary core systems
         checkCoreSystemReachability(CoreSystem.SERVICE_REGISTRY);
-        if (sslEnabled && tokenSecurityFilterEnabled) {
-            checkCoreSystemReachability(CoreSystem.AUTHORIZATION);          
+        if (sslEnabled) {
+            checkCoreSystemReachability(CoreSystem.AUTHORIZATION);
 
             //Initialize Arrowhead Context
             arrowheadService.updateCoreServiceURIs(CoreSystem.AUTHORIZATION);
-
-            setTokenSecurityFilter();
-            logger.info("TokenSecurityFilter activated");
-
-        } else {
-            logger.info("TokenSecurityFilter in not active");
+            
+            if (tokenSecurityFilterEnabled) {
+                setTokenSecurityFilter();
+                logger.info("TokenSecurityFilter activated");
+            }
+            else {
+                logger.info("TokenSecurityFilter in not active");
+            }
         }
 
         // Register Workflow Executor services into ServiceRegistry
@@ -97,9 +99,9 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
                 HttpMethod.POST,
                 Map.of(WExecutorConstants.REQUEST_PARAM_KEY_WORKFLOW, WExecutorConstants.REQUEST_PARAM_WORKFLOW));
         
-        ServiceRegistryResponseDTO serviceRegistrationResponse = arrowheadService.
+        ServiceRegistryResponseDTO serviceRegistrationResponse1 = arrowheadService.
                 forceRegisterServiceToServiceRegistry(provideWorkflowServiceRequest);
-        validateRegistration(serviceRegistrationResponse);
+        validateRegistration(serviceRegistrationResponse1);
         
         // Second service allows a consumer to command the execution of the workflow
         final ServiceRegistryRequestDTO startWorkflowServiceRequest = createServiceRegistryRequest(
@@ -107,10 +109,18 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
                 WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.START_WORKFLOW_URI, 
                 HttpMethod.POST,
                 Map.of(WExecutorConstants.REQUEST_PARAM_KEY_WORKFLOW, WExecutorConstants.REQUEST_PARAM_WORKFLOW));
-        serviceRegistrationResponse = arrowheadService.
-                forceRegisterServiceToServiceRegistry(provideWorkflowServiceRequest);
-        validateRegistration(serviceRegistrationResponse);
+        ServiceRegistryResponseDTO serviceRegistrationResponse2 = arrowheadService.
+                forceRegisterServiceToServiceRegistry(startWorkflowServiceRequest);
+        validateRegistration(serviceRegistrationResponse2);
 
+    }
+    
+    //-------------------------------------------------------------------------------------------------
+    @Override
+    public void customDestroy() {
+        //Unregister services
+        arrowheadService.unregisterServiceFromServiceRegistry(WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION);
+        arrowheadService.unregisterServiceFromServiceRegistry(WExecutorConstants.START_WORKFLOW_SERVICE_DEFINITION);
     }
 
     //=================================================================================================

@@ -13,7 +13,7 @@ public class SpringMain {
 
     public static void main(final String[] args) {
         /*
-         * The code run at start of the system, and at shutdown is written in
+         * The code that runs at start up of the system and at shutdown, is located in
          * the class WExecutorApplicationListener
          */
         SpringApplication.run(SpringMain.class, args);
