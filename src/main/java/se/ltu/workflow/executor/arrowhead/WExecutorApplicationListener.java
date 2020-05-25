@@ -84,11 +84,17 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
          * server.getWebServer().getPort());
          */
         
-        
-        //Checking the availability of necessary core systems
-        checkCoreSystemReachability(CoreSystem.SERVICE_REGISTRY);
+        // Checking the availability of Arrowhead Core systems:
+        // Service Registry needed to register the services provided by this system
+        if (!waitCoreSystemReady(CoreSystem.SERVICE_REGISTRY, 10)) {
+            throw new RuntimeException("Service Registry not available in network");
+        }
+
         if (sslEnabled) {
-            checkCoreSystemReachability(CoreSystem.AUTHORIZATION);
+            // Authorization needed to check authorization rules and obtain tokens
+            if (!waitCoreSystemReady(CoreSystem.AUTHORIZATION, 10)) {
+                throw new RuntimeException("Service Registry not available in network");
+            }
 
             //Initialize Arrowhead Context
             arrowheadService.updateCoreServiceURIs(CoreSystem.AUTHORIZATION);
@@ -101,9 +107,14 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
                 logger.info("TokenSecurityFilter in not active");
             }
         }
+        
+        // Orchestrator needed to find the services provided by other systems
+        if (!waitCoreSystemReady(CoreSystem.ORCHESTRATOR, 10)) {
+            throw new RuntimeException("Service Registry not available in network");
+        }
 
         // Register Workflow Executor services into ServiceRegistry
-        // First service provides the workflow that the executor knows
+        // First service provides the workflows that are stored in the executor
         final ServiceRegistryRequestDTO provideWorkflowServiceRequest = createServiceRegistryRequest(
                 WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION, 
                 WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_URI, 
@@ -114,7 +125,7 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
                 forceRegisterServiceToServiceRegistry(provideWorkflowServiceRequest);
         validateRegistration(serviceRegistrationResponse1);
         
-        // Second service allows a consumer to command the execution of the workflow
+        // Second service allows a consumer to command the execution of the workflows available
         final ServiceRegistryRequestDTO startWorkflowServiceRequest = createServiceRegistryRequest(
                 WExecutorConstants.START_WORKFLOW_SERVICE_DEFINITION, 
                 WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.START_WORKFLOW_URI, 
@@ -208,6 +219,39 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
         }
         
         logger.info("System: " + response.getProvider().getSystemName() +" has registered Service: " + response.getServiceDefinition().getServiceDefinition());
+    }
+    
+    //-------------------------------------------------------------------------------------------------
+    /**
+     * Calls repeatedly the Arrowhead Core System to check if it is deployed
+     * and available in the network, and waits for {@code minutes} until it 
+     * answers before giving up and returning.
+     * 
+     * @param coreSystem  The Arrowhead Core Systems to check its availability
+     * @param minutes  The total number of minutes that the method will keep checking
+     *                  the availability of the system
+     * @return  True if the system answer with the ready status, false otherwise
+     */
+    private Boolean waitCoreSystemReady(final CoreSystem coreSystem, int minutes) {
+        int nCalls = 0;
+        Boolean system = arrowheadService.echoCoreSystem(coreSystem);
+        while (!system) {
+            logger.info("Waiting for '{}' to be available ...", coreSystem.name());
+            try {
+                // Waits for 15 seconds before trying again
+                Thread.sleep(15000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            system = arrowheadService.echoCoreSystem(coreSystem);
+            nCalls ++;
+            if (nCalls/4 >= minutes) {
+                logger.info("'{}' core system was NOT reachable.", coreSystem.name());
+                return false;
+            }
+        }
+        logger.info("'{}' core system is reachable.", coreSystem.name());
+        return true;
     }
     
 }
