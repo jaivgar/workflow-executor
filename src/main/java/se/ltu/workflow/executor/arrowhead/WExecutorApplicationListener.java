@@ -119,7 +119,7 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
                 WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION, 
                 WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_URI, 
                 HttpMethod.POST,
-                Map.of(WExecutorConstants.REQUEST_PARAM_KEY_WORKFLOW, WExecutorConstants.REQUEST_PARAM_WORKFLOW));
+                null);
         
         ServiceRegistryResponseDTO serviceRegistrationResponse1 = arrowheadService.
                 forceRegisterServiceToServiceRegistry(provideWorkflowServiceRequest);
@@ -131,6 +131,7 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
                 WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.START_WORKFLOW_URI, 
                 HttpMethod.POST,
                 Map.of(WExecutorConstants.REQUEST_PARAM_KEY_WORKFLOW, WExecutorConstants.REQUEST_PARAM_WORKFLOW));
+        
         ServiceRegistryResponseDTO serviceRegistrationResponse2 = arrowheadService.
                 forceRegisterServiceToServiceRegistry(startWorkflowServiceRequest);
         validateRegistration(serviceRegistrationResponse2);
