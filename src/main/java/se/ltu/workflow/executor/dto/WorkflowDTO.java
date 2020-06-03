@@ -1,24 +1,24 @@
 package se.ltu.workflow.executor.dto;
 
+import java.util.Collections;
 import java.util.Map;
 
 public class WorkflowDTO {
     
-    String workflowName;
-    Map<String,String> workflowConfig;
+    final String workflowName;
+    final Map<String,String> workflowConfig;
     
     public String getWorkflowName() {
         return workflowName;
     }
-    public void setWorkflowName(String workflowName) {
-        this.workflowName = workflowName;
-    }
+
     public Map<String, String> getWorkflowConfig() {
         return workflowConfig;
     }
-    public void setWorkflowConfig(Map<String, String> workflowConfig) {
-        this.workflowConfig = workflowConfig;
-    }
 
-    
+    public WorkflowDTO(String workflowName, Map<String,String> workflowConfig){
+        this.workflowName = workflowName;
+        // Collections.unmodifiableMap() to make the Map inmutable
+        this.workflowConfig = Collections.unmodifiableMap(workflowConfig);
+    }
 }

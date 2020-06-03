@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import eu.arrowhead.common.CommonConstants;
 
 import se.ltu.workflow.executor.WExecutorConstants;
-import se.ltu.workflow.executor.dto.ActiveWorkflowDTO;
+import se.ltu.workflow.executor.dto.QueuedWorkflowDTO;
 import se.ltu.workflow.executor.dto.WorkflowDTO;
 
 @RestController
@@ -23,6 +23,7 @@ public class WExecutorController {
 	// members
 
 	//TODO: add your variables here
+    // It will contain a Queue of QueuedWorkflow
 
 	//=================================================================================================
 	// methods
@@ -41,7 +42,7 @@ public class WExecutorController {
 	
 	//-------------------------------------------------------------------------------------------------
     @PostMapping(path = WExecutorConstants.START_WORKFLOW_URI)
-    @ResponseBody public ActiveWorkflowDTO startWorkflow(
+    @ResponseBody public QueuedWorkflowDTO startWorkflow(
             @RequestParam(name = WExecutorConstants.REQUEST_PARAM_WORKFLOW) final WorkflowDTO workflowWanted)
     {
         return null;

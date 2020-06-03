@@ -92,7 +92,7 @@ public class Guard implements Evaluable<Map<String, Object>>{
      * @param guardName  The name of this guard, used as key in the Map where it 
      * will be stored
      * 
-     * @throws IllegalArgumentException if the argument is null
+     * @throws IllegalArgumentException if the argument {@code guardName} is null
      */
     private void checkGuard(String guardName) {
     	if (guardName == null) {
