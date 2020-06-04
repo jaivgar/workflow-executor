@@ -59,7 +59,7 @@ public class QueuedWorkflowDTO {
      * Creates a new {@code QueuedWorkflowDTO} and automatically sets its fields
      * form the underlining stored workflow.
      * 
-     * @param workflow  The workflow object used as source of data
+     * @param workflow  The workflow object used as data source
      * @return  The DTO object with the same parameters as the underlining workflow
      */
     public static QueuedWorkflowDTO fromQueuedWorkflow(QueuedWorkflow workflow) {

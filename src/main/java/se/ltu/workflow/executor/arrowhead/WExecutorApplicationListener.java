@@ -38,6 +38,7 @@ import eu.arrowhead.common.exception.ArrowheadException;
 
 import se.ltu.workflow.executor.WExecutorConstants;
 import se.ltu.workflow.executor.arrowhead.security.ProviderSecurityConfig;
+import se.ltu.workflow.executor.service.WExecutorService;
 
 @Component
 public class WExecutorApplicationListener extends ApplicationInitListener{
@@ -69,6 +70,9 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
     /*@Autowired
     ServletWebServerApplicationContext server;
     */
+    
+    @Autowired
+    private WExecutorService executor;
     
     private final Logger logger = LogManager.getLogger(WExecutorApplicationListener.class);
     
@@ -135,6 +139,11 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
         ServiceRegistryResponseDTO serviceRegistrationResponse2 = arrowheadService.
                 forceRegisterServiceToServiceRegistry(startWorkflowServiceRequest);
         validateRegistration(serviceRegistrationResponse2);
+        
+        // Initialize the workflows preloading them to be used in this system
+        executor.initializeWorkflows();
+        
+        // From now on until shutdown, all actions are taken in the WExecutorController class
 
     }
     

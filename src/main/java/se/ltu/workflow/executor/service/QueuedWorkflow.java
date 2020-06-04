@@ -7,15 +7,14 @@ public class QueuedWorkflow extends Workflow{
     
     private static int countWorkflows = -1;
     
-    final int id;
-    final ZonedDateTime queueTime;
-    ZonedDateTime startTime;
-    ZonedDateTime endTime;
+    final private int id;
+    final private ZonedDateTime queueTime;
+    private ZonedDateTime startTime;
+    private ZonedDateTime endTime;
     
-    public QueuedWorkflow(Workflow workflow, WStatus workflowStatus) {
+    public QueuedWorkflow(Workflow workflow) {
         super(workflow.getWorkflowName(), workflow.getWorkflowConfig(), workflow.getWorkflowLogic());
         this.id = countWorkflows++;
-        this.workflowStatus = workflowStatus;
         // If I want a String representation of the date
         //String dateNow = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
         this.queueTime = ZonedDateTime.now(ZoneOffset.UTC);
@@ -26,6 +25,14 @@ public class QueuedWorkflow extends Workflow{
     public static int getCountWorkflows() {
         return countWorkflows;
     }
+    
+    public int getId() {
+        return id;
+    }
+    
+    public ZonedDateTime getQueueTime() {
+        return queueTime;
+    }
 
     public ZonedDateTime getStartTime() {
         return startTime;
@@ -34,16 +41,13 @@ public class QueuedWorkflow extends Workflow{
     public ZonedDateTime getEndTime() {
         return endTime;
     }
-
-    public int getId() {
-        return id;
-    }
-
-    public ZonedDateTime getQueueTime() {
-        return queueTime;
-    }
     
     public Boolean startWorkflow() {
+        //TODO: Called super method to start workflow
+        
+        if (this.getWorkflowStatus() != WStatus.ACTIVE) {
+            throw new IllegalArgumentException("Workflow is finish, so its starting time can not be set");
+        }
         if (this.startTime != null) {
             return false;
         }

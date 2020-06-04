@@ -6,13 +6,13 @@ import se.ltu.workflow.executor.state_machine.StateMachine;
 
 public class Workflow {
     
-    final String workflowName;
+    final private String workflowName;
     /*TODO: The workflowStatus was before in the child class QueuedWorkflow, 
      * still unsure of where to set it
      */
-    WStatus workflowStatus;
-    final Map<String,String> workflowConfig;
-    final StateMachine workflowLogic;
+    private WStatus workflowStatus;
+    final private Map<String,String> workflowConfig;
+    final private StateMachine workflowLogic;
     
     public Workflow(String workflowName, Map<String, String> workflowConfig, StateMachine workflowLogic) {
         this.workflowName = workflowName;

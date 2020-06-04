@@ -2,6 +2,7 @@ package se.ltu.workflow.executor.arrowhead;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,7 @@ import eu.arrowhead.common.CommonConstants;
 import se.ltu.workflow.executor.WExecutorConstants;
 import se.ltu.workflow.executor.dto.QueuedWorkflowDTO;
 import se.ltu.workflow.executor.dto.WorkflowDTO;
+import se.ltu.workflow.executor.service.WExecutorService;
 
 @RestController
 @RequestMapping(WExecutorConstants.WEXECUTOR_URI)
@@ -22,8 +24,8 @@ public class WExecutorController {
 	//=================================================================================================
 	// members
 
-	//TODO: add your variables here
-    // It will contain a Queue of QueuedWorkflow
+    @Autowired
+    private WExecutorService executor;
 
 	//=================================================================================================
 	// methods
