@@ -3,6 +3,8 @@ package se.ltu.workflow.executor.dto;
 import java.util.Collections;
 import java.util.Map;
 
+import se.ltu.workflow.executor.service.Workflow;
+
 public class WorkflowDTO {
     
     final String workflowName;
@@ -20,5 +22,9 @@ public class WorkflowDTO {
         this.workflowName = workflowName;
         // Collections.unmodifiableMap() to make the Map inmutable
         this.workflowConfig = Collections.unmodifiableMap(workflowConfig);
+    }
+    
+    public static WorkflowDTO fromWorkflow(Workflow w) {
+        return new WorkflowDTO(w.getWorkflowName(), w.getWorkflowConfig());
     }
 }
