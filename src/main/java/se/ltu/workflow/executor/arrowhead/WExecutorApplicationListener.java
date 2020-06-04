@@ -118,27 +118,38 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
         }
 
         // Register Workflow Executor services into ServiceRegistry
-        // First service provides the workflows that are stored in the executor
-        final ServiceRegistryRequestDTO provideWorkflowServiceRequest = createServiceRegistryRequest(
+        // This service provides the workflows types/templates that are stored in the executor
+        final ServiceRegistryRequestDTO provideWorkflowTypesServiceRequest = createServiceRegistryRequest(
                 WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION, 
                 WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_URI, 
                 HttpMethod.POST,
                 null);
         
-        ServiceRegistryResponseDTO serviceRegistrationResponse1 = arrowheadService.
-                forceRegisterServiceToServiceRegistry(provideWorkflowServiceRequest);
-        validateRegistration(serviceRegistrationResponse1);
+        ServiceRegistryResponseDTO serviceRegistrationResponse = arrowheadService.
+                forceRegisterServiceToServiceRegistry(provideWorkflowTypesServiceRequest);
+        validateRegistration(serviceRegistrationResponse);
         
-        // Second service allows a consumer to command the execution of the workflows available
-        final ServiceRegistryRequestDTO startWorkflowServiceRequest = createServiceRegistryRequest(
-                WExecutorConstants.START_WORKFLOW_SERVICE_DEFINITION, 
-                WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.START_WORKFLOW_URI, 
+        // This service provides the workflows in execution or commnaded for execution
+        final ServiceRegistryRequestDTO provideWorkflowExecutingServiceRequest = createServiceRegistryRequest(
+                WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION, 
+                WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_URI, 
+                HttpMethod.POST,
+                null);
+        
+        ServiceRegistryResponseDTO SRResponseWorkflowExecuting = arrowheadService.
+                forceRegisterServiceToServiceRegistry(provideWorkflowExecutingServiceRequest);
+        validateRegistration(SRResponseWorkflowExecuting);
+        
+        // This service allows a consumer to command the execution of the workflows available
+        final ServiceRegistryRequestDTO executeWorkflowServiceRequest = createServiceRegistryRequest(
+                WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION, 
+                WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.EXECUTE_WORKFLOW_URI, 
                 HttpMethod.POST,
                 Map.of(WExecutorConstants.REQUEST_PARAM_KEY_WORKFLOW, WExecutorConstants.REQUEST_PARAM_WORKFLOW));
         
-        ServiceRegistryResponseDTO serviceRegistrationResponse2 = arrowheadService.
-                forceRegisterServiceToServiceRegistry(startWorkflowServiceRequest);
-        validateRegistration(serviceRegistrationResponse2);
+        ServiceRegistryResponseDTO SRResponseExecuteWorkflow = arrowheadService.
+                forceRegisterServiceToServiceRegistry(executeWorkflowServiceRequest);
+        validateRegistration(SRResponseExecuteWorkflow);
         
         // Initialize the workflows preloading them to be used in this system
         executor.initializeWorkflows();
@@ -154,8 +165,8 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
         arrowheadService.unregisterServiceFromServiceRegistry(WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION);
         logger.info("Unregistered Service: " + WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION);
         
-        arrowheadService.unregisterServiceFromServiceRegistry(WExecutorConstants.START_WORKFLOW_SERVICE_DEFINITION);
-        logger.info("Unregistered Service: " + WExecutorConstants.START_WORKFLOW_SERVICE_DEFINITION);
+        arrowheadService.unregisterServiceFromServiceRegistry(WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION);
+        logger.info("Unregistered Service: " + WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION);
     }
 
     //=================================================================================================

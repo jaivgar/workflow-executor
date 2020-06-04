@@ -37,14 +37,20 @@ public class WExecutorController {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	@PostMapping(path = WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_URI)
+	@GetMapping(path = WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_URI)
 	@ResponseBody public List<WorkflowDTO> getAvailableWorkflows() {
 	    return null;
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-    @PostMapping(path = WExecutorConstants.START_WORKFLOW_URI)
-    @ResponseBody public QueuedWorkflowDTO startWorkflow(
+    @GetMapping(path = WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_URI)
+    @ResponseBody public List<QueuedWorkflowDTO> getExecutingWorkflows() {
+        return null;
+    }
+	
+	//-------------------------------------------------------------------------------------------------
+    @PostMapping(path = WExecutorConstants.EXECUTE_WORKFLOW_URI)
+    @ResponseBody public QueuedWorkflowDTO executeWorkflow(
             @RequestParam(name = WExecutorConstants.REQUEST_PARAM_WORKFLOW) final WorkflowDTO workflowWanted)
     {
         return null;
