@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -66,9 +67,7 @@ public class WExecutorController {
 	
 	//-------------------------------------------------------------------------------------------------
     @PostMapping(path = WExecutorConstants.EXECUTE_WORKFLOW_URI)
-    @ResponseBody public QueuedWorkflowDTO executeWorkflow(
-            @RequestParam(name = WExecutorConstants.REQUEST_PARAM_WORKFLOW) final WorkflowDTO workflowWanted)
-    {
+    @ResponseBody public QueuedWorkflowDTO executeWorkflow(@RequestBody final WorkflowDTO workflowWanted){
         
         return QueuedWorkflowDTO.fromQueuedWorkflow(
                 executorService.executeWorkflow(workflowWanted.getWorkflowName(), 

@@ -145,7 +145,7 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
                 WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION, 
                 WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.EXECUTE_WORKFLOW_URI, 
                 HttpMethod.POST,
-                Map.of(WExecutorConstants.REQUEST_PARAM_KEY_WORKFLOW, WExecutorConstants.REQUEST_PARAM_WORKFLOW));
+                Map.of(WExecutorConstants.REQUEST_OBJECT_KEY_WORKFLOW, WExecutorConstants.REQUEST_OBJECT_WORKFLOW));
         
         ServiceRegistryResponseDTO SRResponseExecuteWorkflow = arrowheadService.
                 forceRegisterServiceToServiceRegistry(executeWorkflowServiceRequest);
