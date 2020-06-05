@@ -25,7 +25,7 @@ public class WExecutorConstants {
     
     public static final String EXECUTE_WORKFLOW_SERVICE_DEFINITION = "execute-workflow";
     public static final String EXECUTE_WORKFLOW_URI = "/execute";
-    public static final String REQUEST_OBJECT_KEY_WORKFLOW = "request-object-workflow";
+    public static final String REQUEST_OBJECT_KEY_WORKFLOW = "request-object";
     public static final String REQUEST_OBJECT_WORKFLOW = "workflow";
     
     

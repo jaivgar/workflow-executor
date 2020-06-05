@@ -108,7 +108,7 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
                 logger.info("TokenSecurityFilter activated");
             }
             else {
-                logger.info("TokenSecurityFilter in not active");
+                logger.info("TokenSecurityFilter will not be actived");
             }
         }
         
@@ -122,7 +122,7 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
         final ServiceRegistryRequestDTO provideWorkflowTypesServiceRequest = createServiceRegistryRequest(
                 WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION, 
                 WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_URI, 
-                HttpMethod.POST,
+                HttpMethod.GET,
                 null);
         
         ServiceRegistryResponseDTO serviceRegistrationResponse = arrowheadService.
@@ -131,9 +131,9 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
         
         // This service provides the workflows in execution or commnaded for execution
         final ServiceRegistryRequestDTO provideWorkflowExecutingServiceRequest = createServiceRegistryRequest(
-                WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION, 
-                WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_URI, 
-                HttpMethod.POST,
+                WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION, 
+                WExecutorConstants.WEXECUTOR_URI + WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_URI, 
+                HttpMethod.GET,
                 null);
         
         ServiceRegistryResponseDTO SRResponseWorkflowExecuting = arrowheadService.
@@ -163,10 +163,13 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
     public void customDestroy() {
         //Unregister services
         arrowheadService.unregisterServiceFromServiceRegistry(WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION);
-        logger.info("Unregistered Service: " + WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION);
+        logger.info("Unregistering Service: " + WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION);
+        
+        arrowheadService.unregisterServiceFromServiceRegistry(WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION);
+        logger.info("Unregistering Service: " + WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION);
         
         arrowheadService.unregisterServiceFromServiceRegistry(WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION);
-        logger.info("Unregistered Service: " + WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION);
+        logger.info("Unregistering Service: " + WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION);
     }
 
     //=================================================================================================
@@ -225,8 +228,10 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
         // Add metadata to the Request
         serviceRegistryRequest.setMetadata(new HashMap<>());
         serviceRegistryRequest.getMetadata().put(WExecutorConstants.HTTP_METHOD, httpMethod.name());
-        for (Map.Entry<String,String> entries : metadata.entrySet()) {
-            serviceRegistryRequest.getMetadata().put(entries.getKey(),entries.getValue());
+        if(metadata != null) {
+            for (Map.Entry<String,String> entries : metadata.entrySet()) {
+                serviceRegistryRequest.getMetadata().put(entries.getKey(),entries.getValue());
+            }
         }
         
         return serviceRegistryRequest;
@@ -239,7 +244,7 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
             throw new ArrowheadException("Response from Service Registry is empty");
         }
         
-        logger.info("System: " + response.getProvider().getSystemName() +" has registered Service: " + response.getServiceDefinition().getServiceDefinition());
+        logger.info("System: " + response.getProvider().getSystemName() +" registering Service: " + response.getServiceDefinition().getServiceDefinition());
     }
     
     //-------------------------------------------------------------------------------------------------

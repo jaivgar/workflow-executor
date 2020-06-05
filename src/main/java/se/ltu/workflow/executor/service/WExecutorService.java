@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 public class WExecutorService {
     
     private Set<Workflow> workflowsStored;
+    
+    // This should be a ConcurrentLinkedQueue if working in concurrent threads
     private Queue<QueuedWorkflow> workflowsForExecution;
     
     public void initializeWorkflows() {
