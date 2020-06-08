@@ -151,8 +151,8 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
                 forceRegisterServiceToServiceRegistry(executeWorkflowServiceRequest);
         validateRegistration(SRResponseExecuteWorkflow);
         
-        // Initialize the workflows preloading them to be used in this system
-        executor.initializeWorkflows();
+        // The initial workflows to be preloaded in this system are written in the InitialWorkflows
+        // class, that will be injected in the WExecutorService which contains the business logic
         
         // From now on until shutdown, all actions are taken in the WExecutorController class
 

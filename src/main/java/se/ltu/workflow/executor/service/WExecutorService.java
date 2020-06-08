@@ -1,23 +1,31 @@
 package se.ltu.workflow.executor.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import se.ltu.workflow.executor.InitialWorkflows;
 
 @Service
 public class WExecutorService {
     
-    private Set<Workflow> workflowsStored;
+    @Autowired
+    InitialWorkflows initData;
     
+    private Set<Workflow> workflowsStored;
     // This should be a ConcurrentLinkedQueue if working in concurrent threads
     private Queue<QueuedWorkflow> workflowsForExecution;
     
-    public void initializeWorkflows() {
-        addWorkflowType(null);
+    public WExecutorService() {
+        workflowsStored = new HashSet<>(initData.getWorkflows());
+        workflowsForExecution = new ConcurrentLinkedQueue<>();
     }
     
     public List<Workflow> getWorkflowTypes() {
@@ -45,6 +53,7 @@ public class WExecutorService {
     }
     
     private Boolean addWorkflowType(Workflow newWorkflowType) {
-        return true;
+        // TODO
+        return false;
     }
 }
