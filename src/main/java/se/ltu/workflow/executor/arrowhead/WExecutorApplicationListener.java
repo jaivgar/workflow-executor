@@ -71,8 +71,9 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
     ServletWebServerApplicationContext server;
     */
     
-    @Autowired
+    /*@Autowired
     private WExecutorService executor;
+    */
     
     private final Logger logger = LogManager.getLogger(WExecutorApplicationListener.class);
     

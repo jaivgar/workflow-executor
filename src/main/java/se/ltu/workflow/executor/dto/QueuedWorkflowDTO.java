@@ -65,6 +65,9 @@ public class QueuedWorkflowDTO {
     public static QueuedWorkflowDTO fromQueuedWorkflow(QueuedWorkflow workflow) {
         // If I want a String representation of the date
         //String dateNow = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
+        if(workflow == null) {
+            throw new IllegalArgumentException("Input argument \"workflow\" can not be null");
+        }
         return new QueuedWorkflowDTO(workflow.getId(), 
                                      workflow.getWorkflowName(),
                                      workflow.getWorkflowStatus(),

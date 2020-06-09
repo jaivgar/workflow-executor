@@ -19,6 +19,9 @@ public class WorkflowDTO {
     }
 
     public WorkflowDTO(String workflowName, Map<String,String> workflowConfig){
+        if(workflowName == null) {
+            throw new IllegalArgumentException("WorkflowName can not be null, is a unique identifier");
+        }
         this.workflowName = workflowName;
         // Collections.unmodifiableMap() to make the Map inmutable
         this.workflowConfig = Collections.unmodifiableMap(workflowConfig);

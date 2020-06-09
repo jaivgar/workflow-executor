@@ -2,6 +2,7 @@ package se.ltu.workflow.executor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
 import eu.arrowhead.client.library.ArrowheadService;
@@ -24,7 +26,9 @@ import eu.arrowhead.common.dto.shared.OrchestrationFlags.Flag;
 import eu.arrowhead.common.dto.shared.OrchestrationFormRequestDTO.Builder;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import se.ltu.workflow.executor.arrowhead.WExecutorApplicationListener;
+
+import se.ltu.workflow.executor.dto.WorkflowDTO;
+import se.ltu.workflow.executor.dto.QueuedWorkflowDTO;
 import se.ltu.workflow.executor.service.Workflow;
 import se.ltu.workflow.executor.state_machine.Event;
 import se.ltu.workflow.executor.state_machine.Guard;
@@ -69,7 +73,7 @@ public class InitialWorkflows {
         
         Map<String, String> workflowTestConfig = new HashMap<>(Map.ofEntries(
                 Map.entry("scheduleTime", "String"),
-                Map.entry("Operation", "String")));
+                Map.entry("Services", "String")));
         
         StateMachine workflowTestMachine = new StateMachine(
                 Arrays.asList(
@@ -83,63 +87,123 @@ public class InitialWorkflows {
                         null, 
                         null, 
                         (env, events) -> {
-                            // Check services needed in State Machine are available in Local Cloud
-                            System.out.println("Look at State Machine configuration");
+                            // Check services needed in this State Machine are available in Local Cloud now
+                            System.out.println("Transition 0: Look at State Machine configuration");
                             List<String> toFindServices = (List<String>) env.get("Services");
                             if(toFindServices != null) {
-                                List<String> serviceURIs = new ArrayList<>();
+                                Map<String,OrchestrationResultDTO> serviceAndAddress = new HashMap<>();
+                                System.out.println("Transition 0: Start orchestration of services "
+                                        + "in configuration");
                                 for(String serviceDefinition : toFindServices) {
                                     try {
-                                        OrchestrationResultDTO serviceFound = 
-                                                orchestrate(serviceDefinition);
-                                        serviceURIs.add(serviceFound.getServiceUri());
+                                        OrchestrationResultDTO serviceFound = orchestrate(serviceDefinition);
+                                        serviceAndAddress.put(serviceDefinition, serviceFound);
                                     } catch (final ArrowheadException e) {
                                         events.add(new Event("Init-Fail"));
                                         e.printStackTrace();
+                                        env.put("Error", "Service " + serviceDefinition + " not found in Local Cloud");
                                         return;
                                     }
                                 }
-                                env.put("Services-Address", serviceURIs);
+                                env.put("ServicesAddress", serviceAndAddress);
                                 events.add(new Event("Init-Success"));
+                            }
+                            else {
+                                events.add(new Event("Init-Fail"));
                             }
                         },
                         // Next State:
                         1
                     ),
                     new Transition(
-                        new LogicExpression<Event,Set<Event>>(null, List.of(new Event("Init-Success"))), 
-                        null, 
+                        new LogicExpression<Event,Set<Event>>(LogicOperator.OR, 
+                                                              List.of(new Event("Init-Success"), new Event("More-Work"))), 
+                        null,
                         (env, events) -> {
-                            // Check services needed in State Machine are available in Local Cloud
-                            System.out.println("Look at State Machine configuration");
-                            List<String> toFindServices = (List<String>) env.get("Services");
-                            if(toFindServices != null) {
-                                for(String serviceDefinition : toFindServices) {
-                                    try {
-                                        orchestrate(serviceDefinition);
-                                    } catch (final ArrowheadException e) {
-                                        events.add(new Event("Init-Fail"));
-                                    }
+                            // Test services found
+                            System.out.println("Transition 1: Test services found");
+                            Map<String,OrchestrationResultDTO> serviceAndAddress = 
+                                    (Map<String, OrchestrationResultDTO>) env.get("ServicesAddress");
+
+                            System.out.println("Transition 1: Test Available Workflow type service");
+                            if (serviceAndAddress.containsKey(WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION)) {
+                                OrchestrationResultDTO WExecutorInfo = serviceAndAddress.get(
+                                        WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION);
+                                List<WorkflowDTO> serviceResult = consumeService(Collections.emptyList(), WExecutorInfo, null, null);
+                                env.put("AvailableWorkflows", serviceResult);
+                                // Not sure if we can print a list like this, but let's see
+                                System.out.print(serviceResult);
+                                if(serviceResult.isEmpty()) {
+                                    // This workflow should be in the list
+                                    events.add(new Event("Work-error"));
+                                    env.put("Error", "The list of Workflows Available is empty");
+                                }
+                            }
+                            
+                            System.out.println("Transition 1: Test In-execution Workflow service");
+                            if (serviceAndAddress.containsKey(WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION)) {
+                                OrchestrationResultDTO WExecutorInfo = serviceAndAddress.get(
+                                        WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION);
+                                List<QueuedWorkflowDTO> serviceResult = consumeService(Collections.emptyList(), WExecutorInfo, null, null);
+                                env.put("InExecutionWorkflows", serviceResult);
+                                // Not sure if we can print a list like this, but let's see
+                                System.out.print(serviceResult);
+                                if(serviceResult.isEmpty()) {
+                                    // No workflow has started execution yet
+                                    events.add(new Event("Work-ongoing"));
+                                }
+                                else {
+                                    events.add(new Event("Work-done"));
+                                    env.put("WorkResult", 1);
                                 }
                             }
                         },
                         // Next State:
-                        1
+                        2
                     ),
                     new Transition(
                         //new LogicExpression<Event,Set<Event>>(null, new HashSet<Event>(Stream.of("EVENT-X").collect(Collectors.toUnmodifiableSet()))),
-                        new LogicExpression<Event,Set<Event>>(null, List.of(new Event("EVENT-X"))), 
-                        new LogicExpression<Guard,Map<String, Object>>(
-                                                                    LogicOperator.NOT, 
-                                                                    List.of(new Guard("x", 1))), 
+                        null, 
+                        new LogicExpression<Guard,Map<String, Object>>(LogicOperator.NOT, 
+                                                                       List.of(new Guard("WorkResult", 1))), 
                         (env, events) -> {
-                            System.out.println("Transition active: add variable b");
-                            env.put("b", 
-                                    env.get("b") != null ? (int)env.get("b") + 1 : 1);
+                            System.out.println("Transition 2: Start Workflow execution");
+                            Map<String,OrchestrationResultDTO> serviceAndAddress = 
+                                    (Map<String, OrchestrationResultDTO>) env.get("ServicesAddress");
+                            if (serviceAndAddress.containsKey(WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION)) {
+                                OrchestrationResultDTO WExecutorInfo = serviceAndAddress.get(
+                                        WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION);
+                                QueuedWorkflowDTO serviceResult = consumeService(null, WExecutorInfo, null, null);
+                                if(serviceResult  == null) {
+                                    events.add(new Event("Work-error"));
+                                    env.put("Error", "The returned QueuedWorkflowDTO is not well formed, is empty");
+                                }
+                                else {
+                                    events.add(new Event("More-Work"));
+                                }
+                            }
+                        },
+                        // Next State:
+                        2
+                    ),
+                    new Transition(
+                        new LogicExpression<Event,Set<Event>>(LogicOperator.OR, 
+                                List.of(new Event("Init-Fail"), new Event("Work-error"),new Event("Work-done"))), 
+                        null, 
+                        (env, events) -> {
+                            System.out.println("Transition 3: End State Machine and output results");
+                            if (env.containsKey("Error")) {
+                                env.put("OutputStateMachine", 500);
+                            }
+                            else {
+                                env.put("OutputStateMachine", 200);
+                            }
+
                             System.out.println("The events are: " + events);
                             System.out.println("The env is: " + env);
                         }, 
-                        2
+                        // Next State:
+                        3
                     )
                 ));
         
@@ -207,5 +271,22 @@ public class InitialWorkflows {
     //-------------------------------------------------------------------------------------------------
     private String getInterface() {
         return sslProperties.isSslEnabled() ? WExecutorConstants.INTERFACE_SECURE : WExecutorConstants.INTERFACE_INSECURE;
+    }
+    
+    //-------------------------------------------------------------------------------------------------
+    private <T> T consumeService(T ResponseDTO, final OrchestrationResultDTO orchestrationResult, 
+            final Object payload, final String[] metadata) {
+        final String token = orchestrationResult.getAuthorizationTokens() == null ? null : orchestrationResult.getAuthorizationTokens().get(getInterface());
+        
+        return (T) arrowheadService.consumeServiceHTTP(
+                ResponseDTO.getClass(), // The type of object that the Response will be matched to
+                HttpMethod.valueOf(orchestrationResult.getMetadata().get(WExecutorConstants.HTTP_METHOD)),
+                orchestrationResult.getProvider().getAddress(), 
+                orchestrationResult.getProvider().getPort(), 
+                orchestrationResult.getServiceUri(),
+                getInterface(), 
+                token, 
+                payload, 
+                metadata);
     }
 }
