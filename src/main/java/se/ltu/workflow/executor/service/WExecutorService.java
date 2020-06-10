@@ -8,6 +8,8 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,15 +19,20 @@ import se.ltu.workflow.executor.InitialWorkflows;
 public class WExecutorService {
     
     @Autowired
-    InitialWorkflows initData;
+    private InitialWorkflows initData;
     
-    private Set<Workflow> workflowsStored;
+    final private Set<Workflow> workflowsStored;
     // This should be a ConcurrentLinkedQueue if working in concurrent threads
-    private Queue<QueuedWorkflow> workflowsForExecution;
+    final private Queue<QueuedWorkflow> workflowsForExecution;
     
     public WExecutorService() {
-        workflowsStored = new HashSet<>(initData.getWorkflows());
+        workflowsStored = new HashSet<>();
         workflowsForExecution = new ConcurrentLinkedQueue<>();
+    }
+    
+    @PostConstruct
+    private void initConfig() {
+        workflowsStored.addAll(initData.getWorkflows());
     }
     
     public List<Workflow> getWorkflowTypes() {

@@ -38,7 +38,6 @@ import eu.arrowhead.common.exception.ArrowheadException;
 
 import se.ltu.workflow.executor.WExecutorConstants;
 import se.ltu.workflow.executor.arrowhead.security.ProviderSecurityConfig;
-import se.ltu.workflow.executor.service.WExecutorService;
 
 @Component
 public class WExecutorApplicationListener extends ApplicationInitListener{
@@ -69,10 +68,6 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
     
     /*@Autowired
     ServletWebServerApplicationContext server;
-    */
-    
-    /*@Autowired
-    private WExecutorService executor;
     */
     
     private final Logger logger = LogManager.getLogger(WExecutorApplicationListener.class);

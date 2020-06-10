@@ -1,6 +1,5 @@
 package se.ltu.workflow.executor.dto;
 
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 import se.ltu.workflow.executor.service.QueuedWorkflow;

@@ -1,6 +1,5 @@
 package se.ltu.workflow.executor;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
