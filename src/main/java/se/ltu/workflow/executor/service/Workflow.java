@@ -41,6 +41,22 @@ public class Workflow {
         return workflowLogic;
     }
     
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Workflow) {
+            boolean sameName = this.getWorkflowName().equals(((Workflow) obj).getWorkflowName());
+            /* The configuration parameters do not need to match exactly, leaving some flexibility for optional
+             * configuration, and failing at execution time if there are no default values for those parameters.
+             * boolean sameConfigParameters = this.getWorkflowConfig().keySet().equals(
+                    ((Workflow) obj).getWorkflowConfig().keySet());
+               return sameName && sameConfigParameters;
+            */
+            return sameName;
+        }
+        else {
+            return false;
+        }
+    }
     
   
 }

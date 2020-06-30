@@ -58,21 +58,21 @@ public class QueuedWorkflowDTO {
      * Creates a new {@code QueuedWorkflowDTO} and automatically sets its fields
      * form the underlining stored workflow.
      * 
-     * @param workflow  The workflow object used as data source
+     * @param queuedWorkflow  The workflow object used as data source
      * @return  The DTO object with the same parameters as the underlining workflow
      */
-    public static QueuedWorkflowDTO fromQueuedWorkflow(QueuedWorkflow workflow) {
+    public static QueuedWorkflowDTO fromQueuedWorkflow(QueuedWorkflow queuedWorkflow) {
         // If I want a String representation of the date
         //String dateNow = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
-        if(workflow == null) {
+        if(queuedWorkflow == null) {
             throw new IllegalArgumentException("Input argument \"workflow\" can not be null");
         }
-        return new QueuedWorkflowDTO(workflow.getId(), 
-                                     workflow.getWorkflowName(),
-                                     workflow.getWorkflowStatus(),
-                                     workflow.getQueueTime(),
-                                     workflow.getStartTime(),
-                                     workflow.getEndTime());
+        return new QueuedWorkflowDTO(queuedWorkflow.getId(), 
+                                     queuedWorkflow.getWorkflowName(),
+                                     queuedWorkflow.getWorkflowStatus(),
+                                     queuedWorkflow.getQueueTime(),
+                                     queuedWorkflow.getStartTime(),
+                                     queuedWorkflow.getEndTime());
     }
     
     /*

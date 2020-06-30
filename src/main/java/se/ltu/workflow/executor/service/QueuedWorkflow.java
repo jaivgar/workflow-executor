@@ -5,7 +5,7 @@ import java.time.ZonedDateTime;
 
 public class QueuedWorkflow extends Workflow{
     
-    private static int countWorkflows = -1;
+    private static int countWorkflows = 0;
     
     final private int id;
     final private ZonedDateTime queueTime;

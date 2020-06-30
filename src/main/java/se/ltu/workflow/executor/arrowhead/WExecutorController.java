@@ -6,13 +6,13 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.common.CommonConstants;
@@ -46,8 +46,9 @@ public class WExecutorController {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
+	// No need of @ResponseBody since is included in @RestController
 	@GetMapping(path = WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_URI)
-	@ResponseBody public List<WorkflowDTO> getAvailableWorkflows() {   
+	public List<WorkflowDTO> getAvailableWorkflows() {   
 	    logger.info("Receiving request for service: " + WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION);
 	    
 	    List<WorkflowDTO> availableWorkflowsDTO = new ArrayList<>();
@@ -60,7 +61,7 @@ public class WExecutorController {
 	
 	//-------------------------------------------------------------------------------------------------
     @GetMapping(path = WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_URI)
-    @ResponseBody public List<QueuedWorkflowDTO> getExecutingWorkflows() {
+    public List<QueuedWorkflowDTO> getExecutingWorkflows() {
         logger.info("Receiving request for service: " + WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION);
         
         List<QueuedWorkflowDTO> inExecutionWorkflowsDTO = new ArrayList<>();
@@ -74,13 +75,22 @@ public class WExecutorController {
 	
 	//-------------------------------------------------------------------------------------------------
     @PostMapping(path = WExecutorConstants.EXECUTE_WORKFLOW_URI, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
-    @ResponseBody public QueuedWorkflowDTO executeWorkflow(@RequestBody final WorkflowDTO workflowWanted){
+    // It only allows one HTTP status(if there are no exceptions) @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
+    public ResponseEntity<QueuedWorkflowDTO> executeWorkflow(@RequestBody final WorkflowDTO workflowWanted){
         logger.info("Receiving request for service: " + WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION);
+        QueuedWorkflowDTO resultBody;
+        try {
+            resultBody = QueuedWorkflowDTO.fromQueuedWorkflow(
+                    executorService.executeWorkflow(workflowWanted.getWorkflowName(), 
+                                                    workflowWanted.getWorkflowConfig()));
+        }
+        catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
         
-        return QueuedWorkflowDTO.fromQueuedWorkflow(
-                executorService.executeWorkflow(workflowWanted.getWorkflowName(), 
-                                                workflowWanted.getWorkflowConfig()));
+        // resultBody can not be null since then fromQueuedWorkflow() would have thrown exception
+        return ResponseEntity.status(HttpStatus.CREATED).body(resultBody);
+
     }
     
 }

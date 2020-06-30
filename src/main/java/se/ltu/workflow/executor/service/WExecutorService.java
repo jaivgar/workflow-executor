@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,8 @@ public class WExecutorService {
     
     @Autowired
     private InitialWorkflows initData;
+    
+    private final Logger logger = LogManager.getLogger(WExecutorService.class);
     
     final private Set<Workflow> workflowsStored;
     // This should be a ConcurrentLinkedQueue if working in concurrent threads
@@ -52,11 +56,34 @@ public class WExecutorService {
     }
     
     public QueuedWorkflow executeWorkflow(String workflowName, Map<String, String> workflowConfig) {
+        
         // Search for the workflow in the workflowsStored
-        // Create a new QueuedWorkflow with that information and add to Queue
-        // Spun a new thread to execute the Workflow, if no other under execution at the moment
-        // Return the created QueuedWorkflow (Or the one from the Queue)
-        return null;
+        /* One Option was to use the contains() method of Set class, that required to Override the default
+         * equals() method of Object class and to create a Workflow with only a name and config.
+         * 
+         * But the goal was to enforced a complete object in the Workflow constructor, so switched towards a
+         * foreach search of the elements in the Set for a matching name.
+         */
+        Workflow requestedWorkflow = new Workflow(workflowName, workflowConfig, null);
+        for (Workflow w : workflowsStored) {
+            if (w.equals(requestedWorkflow)) {
+                requestedWorkflow = w;
+                logger.info("Workflow with requested parameter found in memory: " + requestedWorkflow.getWorkflowName()); 
+            }
+        }
+        if(requestedWorkflow.getWorkflowLogic() == null) {
+            // The workflow was not found, so exit with a negative value (null or exception?)
+            return null;
+        }
+        // Create a new QueuedWorkflow with the configuration parameters and add to Queue
+        requestedWorkflow.getWorkflowConfig().putAll(workflowConfig);
+        QueuedWorkflow toExecuteWork = new QueuedWorkflow(requestedWorkflow);
+        workflowsForExecution.add(toExecuteWork);
+
+        // Spun a new thread to execute the Workflow, if no other workflow is under execution at the moment
+        
+        // Return the created QueuedWorkflow (Or the one from the Queue?)
+        return toExecuteWork;
     }
     
     private Boolean addWorkflowType(Workflow newWorkflowType) {
