@@ -1,6 +1,7 @@
 package se.ltu.workflow.executor.service;
 
 import java.util.Map;
+import java.util.Objects;
 
 import se.ltu.workflow.executor.state_machine.StateMachine;
 
@@ -43,20 +44,31 @@ public class Workflow {
     
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Workflow) {
-            boolean sameName = this.getWorkflowName().equals(((Workflow) obj).getWorkflowName());
-            /* The configuration parameters do not need to match exactly, leaving some flexibility for optional
-             * configuration, and failing at execution time if there are no default values for those parameters.
-             * boolean sameConfigParameters = this.getWorkflowConfig().keySet().equals(
-                    ((Workflow) obj).getWorkflowConfig().keySet());
-               return sameName && sameConfigParameters;
-            */
-            return sameName;
-        }
-        else {
+        if (this == obj)
+            return true;
+        if (obj == null)
             return false;
-        }
+        if (getClass() != obj.getClass())
+            return false;
+        if (getWorkflowName() == null)
+            return false;
+        Workflow other = (Workflow) obj;
+        boolean sameName = this.getWorkflowName().equals(other.getWorkflowName());
+        /* The configuration parameters do not need to match exactly, leaving some flexibility for optional
+         * configuration, and failing at execution time if there are no default values for those parameters.
+         * boolean sameConfigParameters = this.getWorkflowConfig().keySet().equals(
+                ((Workflow) obj).getWorkflowConfig().keySet());
+           return sameName && sameConfigParameters;
+        */
+        return sameName;
     }
-    
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((getWorkflowName() == null) ? 0 : getWorkflowName().hashCode());
+        return result;
+    }
   
 }
