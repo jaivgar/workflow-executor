@@ -108,6 +108,7 @@ public class InitialWorkflows {
                                 events.add(new Event("Init-Success"));
                             }
                             else {
+                                env.put("Error","No Services privided for initial configuration");
                                 events.add(new Event("Init-Fail"));
                             }
                         },

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.annotation.PostConstruct;
@@ -33,11 +33,47 @@ public class WExecutorService {
      * but the ConcurrentLinkedQueue offers better performance enabling simultaneous reads, or 
      * simultaneous writes.
      */
-    final private Queue<QueuedWorkflow> workflowsForExecution;
+    final private BlockingQueue<QueuedWorkflow> workflowsForExecution;
+    
+    final private Thread workflowsExecuting;
     
     public WExecutorService() {
         workflowsStored = new HashSet<>();
         workflowsForExecution = new LinkedBlockingQueue<>();
+        
+        // This thread will consume workflows and execute their State Machines
+        Runnable workflowsRunning = () -> {
+            
+            QueuedWorkflow workflowOngoing;
+            Boolean workflowSuccesful;
+            
+            try {
+                while(true) {
+                    /* Retrieve first element, deleting it from Queue, this method 
+                     * will block the thread whenever Queue is empty
+                     */
+                    workflowOngoing = workflowsForExecution.take();
+                    
+                    workflowOngoing.setWorkflowStatus(WStatus.ACTIVE);
+                    
+                    // This method will trigger the execution of the State Machine as the representation of the Workflow
+                    while(workflowOngoing.getWorkflowLogic().update());
+                    
+                    // This is one way to obtain results from a State Machine, in this case we use similar HTTP codes
+                    if((int)workflowOngoing.getWorkflowLogic().getEnvironment().get("OutputStateMachine") == 200) {
+                        workflowOngoing.setWorkflowStatus(WStatus.DONE);
+                    }
+                }
+                
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                logger.error("Thread executing State Machines inside WExecutorService has runned into problem");
+                System.exit(1);
+            }
+            
+        };
+        workflowsExecuting = new Thread(workflowsRunning, "Running worklfows thread");
+        workflowsExecuting.start();
     }
     
     @PostConstruct
@@ -90,7 +126,7 @@ public class WExecutorService {
             logger.error("The capacity of internal memory of Workflow Executor is full, to many Workflows waiting to be executed");
         }
         
-        // Spun a new thread to execute the Workflow, if no other workflow is under execution at the moment
+        // A thread is forever running checking for Workflows in the Queue
         
         // Return the created QueuedWorkflow (Or the one from the Queue?)
         return toExecuteWork;
