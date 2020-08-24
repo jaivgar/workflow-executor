@@ -57,7 +57,7 @@ public class WExecutorService {
                     workflowOngoing.setWorkflowStatus(WStatus.ACTIVE);
                     
                     // This method will trigger the execution of the State Machine as the representation of the Workflow
-                    while(workflowOngoing.getWorkflowLogic().update());
+                    workflowOngoing.startWorkflow();
                     
                     // This is one way to obtain results from a State Machine, in this case we use similar HTTP codes
                     if((int)workflowOngoing.getWorkflowLogic().getEnvironment().get("OutputStateMachine") == 200) {
@@ -72,7 +72,7 @@ public class WExecutorService {
             }
             
         };
-        workflowsExecuting = new Thread(workflowsRunning, "Running worklfows thread");
+        workflowsExecuting = new Thread(workflowsRunning, "Running workflows thread");
         workflowsExecuting.start();
     }
     
@@ -97,7 +97,7 @@ public class WExecutorService {
         return workflowInExecution;
     }
     
-    public QueuedWorkflow executeWorkflow(String workflowName, Map<String, String> workflowConfig) {
+    public QueuedWorkflow executeWorkflow(String workflowName, Map<String, List<String>> workflowConfig) {
         
         // Search for the workflow in the workflowsStored
         /* One Option was to use the contains() method of Set class, that required to Override the default

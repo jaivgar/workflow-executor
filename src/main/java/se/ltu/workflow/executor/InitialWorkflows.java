@@ -1,5 +1,6 @@
 package se.ltu.workflow.executor;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -70,9 +71,9 @@ public class InitialWorkflows {
         
         String workflowTestName = "test123";
         
-        Map<String, String> workflowTestConfig = new HashMap<>(Map.ofEntries(
-                Map.entry("scheduleTime", "String"),
-                Map.entry("Services", "String")));
+        Map<String, List<String>> workflowTestConfig = new HashMap<>(Map.ofEntries(
+                Map.entry("scheduleTime", new ArrayList<>(List.of("String")) ),
+                Map.entry("Services", new ArrayList<>(List.of("String")))));
         
         StateMachine workflowTestMachine = new StateMachine(
                 Arrays.asList(

@@ -1,5 +1,6 @@
 package se.ltu.workflow.executor.service;
 
+import java.util.List;
 import java.util.Map;
 
 import se.ltu.workflow.executor.state_machine.StateMachine;
@@ -11,10 +12,12 @@ public class Workflow {
      * still unsure of where to set it
      */
     private WStatus workflowStatus;
-    final private Map<String,String> workflowConfig;
+    final private Map<String,List<String>> workflowConfig;
     final private StateMachine workflowLogic;
     
-    public Workflow(String workflowName, Map<String, String> workflowConfig, StateMachine workflowLogic) {
+    //TODO: Add variable to store Workflow results?
+    
+    public Workflow(String workflowName, Map<String, List<String>> workflowConfig, StateMachine workflowLogic) {
         this.workflowName = workflowName;
         this.workflowStatus = WStatus.IDLE;
         this.workflowConfig = workflowConfig;
@@ -33,7 +36,7 @@ public class Workflow {
         return workflowName;
     }
 
-    public Map<String, String> getWorkflowConfig() {
+    public Map<String, List<String>> getWorkflowConfig() {
         return workflowConfig;
     }
 
@@ -41,6 +44,41 @@ public class Workflow {
         return workflowLogic;
     }
     
+    /**
+     * This method encapsulates the logic to execute a Workflow. 
+     * <p>
+     * Its internal logic is represented by a State Machine, which is part of the object. 
+     * Therefore the Workflow execution is equivalent to the execution of the State Machine.
+     * <p>
+     * This method has a pre-condition: the Workflow from which it is called must be in ACTIVE state,
+     * otherwise it will throw an {@code IllegalArgumentException}.
+     * 
+     * 
+     * @return The same as in {@link se.ltu.workflow.executor.state_machine.StateMachine#update()}. 
+     * True when the workflow can keep executing, false otherwise.
+     */
+    public Boolean startWorkflow() {
+        if (this.getWorkflowStatus() != WStatus.ACTIVE) {
+            throw new IllegalStateException("Workflow is not ACTIVE yet, so it should not be executed");
+        }
+        else {
+            // Add configuration to State Machine
+            workflowConfig.forEach((k,v)-> this.getWorkflowLogic().setVariable(k, v));
+            
+            // Execute all the transitions of the State Machine
+            while(this.getWorkflowLogic().update());
+                
+            // Set to status DONE the Workflow executed
+            this.setWorkflowStatus(WStatus.DONE);
+            
+            // Return the result? Or nothing?
+            return false;
+        }
+    }
+    
+    /**
+     * Indicates whether some other Workflow is "equal to" this one, by comparing its name
+     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj)

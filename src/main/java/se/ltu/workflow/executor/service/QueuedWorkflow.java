@@ -42,28 +42,29 @@ public class QueuedWorkflow extends Workflow{
         return endTime;
     }
     
+    @Override
     public Boolean startWorkflow() {
-        //TODO: Called super method to start workflow
         
-        if (this.getWorkflowStatus() != WStatus.ACTIVE) {
-            throw new IllegalArgumentException("Workflow is finish, so its starting time can not be set");
-        }
         if (this.startTime != null) {
-            return false;
+            throw new IllegalStateException("This Worflow has already been started, internal Workflow Executor Error");
         }
         else {
             this.startTime = ZonedDateTime.now(ZoneOffset.UTC);
-            return true;
         }
+        
+        // Call super method to start State Machine execution
+        Boolean workflowExecution = super.startWorkflow();
+        endWorkflow();
+        return workflowExecution;
     }
     
-    public Boolean endWorkflow(ZonedDateTime endTime) {
+    
+    private void endWorkflow() {
         if (this.endTime != null) {
-            return false;
+            throw new IllegalStateException("This Worflow has already been started, internal Workflow Executor Error");
         }
         else {
             this.endTime = ZonedDateTime.now(ZoneOffset.UTC);
-            return true;
         }
     }
 
