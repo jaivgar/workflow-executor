@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.annotation.PostConstruct;
 
@@ -26,12 +26,18 @@ public class WExecutorService {
     private final Logger logger = LogManager.getLogger(WExecutorService.class);
     
     final private Set<Workflow> workflowsStored;
-    // This should be a ConcurrentLinkedQueue if working in concurrent threads
+    
+    /* This should be a ConcurrentLinkedQueue or LinkedBlockingQueue, when working in multiple threads.
+     * The expected behavior is to have a consumer blocking when no item is present in the Queue,
+     * therefore the LinkedBlockingQueue fits better in this case as it allows automatic locking when take(),
+     * but the ConcurrentLinkedQueue offers better performance enabling simultaneous reads, or 
+     * simultaneous writes.
+     */
     final private Queue<QueuedWorkflow> workflowsForExecution;
     
     public WExecutorService() {
         workflowsStored = new HashSet<>();
-        workflowsForExecution = new ConcurrentLinkedQueue<>();
+        workflowsForExecution = new LinkedBlockingQueue<>();
     }
     
     @PostConstruct
@@ -78,8 +84,12 @@ public class WExecutorService {
         // Create a new QueuedWorkflow with the configuration parameters and add to Queue
         requestedWorkflow.getWorkflowConfig().putAll(workflowConfig);
         QueuedWorkflow toExecuteWork = new QueuedWorkflow(requestedWorkflow);
-        workflowsForExecution.add(toExecuteWork);
-
+        try {
+            workflowsForExecution.add(toExecuteWork);
+        } catch (IllegalStateException e) {
+            logger.error("The capacity of internal memory of Workflow Executor is full, to many Workflows waiting to be executed");
+        }
+        
         // Spun a new thread to execute the Workflow, if no other workflow is under execution at the moment
         
         // Return the created QueuedWorkflow (Or the one from the Queue?)

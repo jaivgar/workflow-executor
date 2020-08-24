@@ -1,7 +1,6 @@
 package se.ltu.workflow.executor.service;
 
 import java.util.Map;
-import java.util.Objects;
 
 import se.ltu.workflow.executor.state_machine.StateMachine;
 
