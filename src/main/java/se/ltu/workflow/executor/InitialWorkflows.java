@@ -101,7 +101,7 @@ public class InitialWorkflows {
                                     } catch (final ArrowheadException e) {
                                         events.add(new Event("Init-Fail"));
                                         e.printStackTrace();
-                                        env.put("Error", "Service " + serviceDefinition + " not found in Local Cloud");
+                                        env.put("Error", "Service \"" + serviceDefinition + "\" not found in Local Cloud");
                                         return;
                                     }
                                 }
@@ -109,7 +109,7 @@ public class InitialWorkflows {
                                 events.add(new Event("Init-Success"));
                             }
                             else {
-                                env.put("Error","No Services privided for initial configuration");
+                                env.put("Error","No Services provided for initial configuration");
                                 events.add(new Event("Init-Fail"));
                             }
                         },

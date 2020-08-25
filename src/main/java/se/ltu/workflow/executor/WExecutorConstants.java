@@ -21,7 +21,7 @@ public class WExecutorConstants {
     public static final String PROVIDE_AVAILABLE_WORKFLOW_URI = "/workflows";
     
     public static final String PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION = "provide-workflows-in-execution";
-    public static final String PROVIDE_IN_EXECUTION_WORKFLOW_URI = "workflows/execution";
+    public static final String PROVIDE_IN_EXECUTION_WORKFLOW_URI = "/workflows/execution";
     
     public static final String EXECUTE_WORKFLOW_SERVICE_DEFINITION = "execute-workflow";
     public static final String EXECUTE_WORKFLOW_URI = "/execute";
