@@ -92,18 +92,44 @@ public class StateMachine {
         this.transitions = transitions;
         this.currentState = currentState;
         
-
+    }
+    
+    public StateMachine(StateMachine sm) {
+        this.events = new HashSet<>(sm.getEvents());
+        this.environment = new HashMap<>(sm.getEnvironment());
+        this.states = List.copyOf(sm.states);
+        this.transitions = List.copyOf(sm.transitions);
+        this.currentState = sm.getCurrentState();
     }
 
 	/**
+     * Obtains the number of the current/active state of the State Machine
+     * 
+     * @return The number of the current state as ordered in the State List
+     */
+    public int getCurrentState() {
+        return currentState;
+    }
+    
+    /**
      * Obtains the current/active state of the State Machine
      * 
      * @return The State which will be checked for transitions in the {@link #update()} method
      */
-    public State getCurrentState() {
+    public State getActiveState() {
         return states.get(currentState);
     }
     
+    /**
+     * Sets the number corresponding to the current/active state of the State Machine
+     * 
+     * @param currentState The number of the state, as ordered in the State List, that should
+     * be used to start the State Machine from.
+     */
+    public void setCurrentState(int currentState) {
+        this.currentState = currentState;
+    }
+
     /**
      * Shows the events queued in the StateMachine, that will be checked upon call of {@link #update()}
      * 
@@ -163,7 +189,7 @@ public class StateMachine {
      * constant state of no change allowed. 
      */
     public boolean update() {
-    	final State state = getCurrentState();
+    	final State state = getActiveState();
     	
     	/* Check if this state is an END state, that would stop the State Machine.
          * Before adding and END state flag to the state object, we can just check if the state has
@@ -231,7 +257,7 @@ public class StateMachine {
              * If so, remove break, remove event clear before actions and
              * throw exception for nondeterministic behavior?
              */
-            break; 
+            return true; 
         }
         
         /* The events are removed after they have been checked against all the transitions.
@@ -242,7 +268,8 @@ public class StateMachine {
          * transition, deterministic State Machine.
          */
         //events.clear();
-        return true;
+        
+        return false;
         
     }
 

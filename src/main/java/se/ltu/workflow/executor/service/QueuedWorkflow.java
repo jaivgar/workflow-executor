@@ -48,24 +48,22 @@ public class QueuedWorkflow extends Workflow{
         if (this.startTime != null) {
             throw new IllegalStateException("This Worflow has already been started, internal Workflow Executor Error");
         }
-        else {
-            this.startTime = ZonedDateTime.now(ZoneOffset.UTC);
-        }
         
+        this.startTime = ZonedDateTime.now(ZoneOffset.UTC);
         // Call super method to start State Machine execution
         Boolean workflowExecution = super.startWorkflow();
-        endWorkflow();
-        return workflowExecution;
+        Boolean workflowEnd = endWorkflow();
+        return workflowExecution && workflowEnd;
     }
     
-    
-    private void endWorkflow() {
+    @Override
+    public Boolean endWorkflow() {
         if (this.endTime != null) {
             throw new IllegalStateException("This Worflow has already been started, internal Workflow Executor Error");
         }
-        else {
-            this.endTime = ZonedDateTime.now(ZoneOffset.UTC);
-        }
+
+        this.endTime = ZonedDateTime.now(ZoneOffset.UTC);
+        return super.endWorkflow();
     }
 
     

@@ -1,5 +1,6 @@
 package se.ltu.workflow.executor.service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,13 +16,47 @@ public class Workflow {
     final private Map<String,List<String>> workflowConfig;
     final private StateMachine workflowLogic;
     
-    //TODO: Add variable to store Workflow results?
+    //TODO: Add variable to store Workflow results? Not needed if workflowConfig is a mutable Map
     
     public Workflow(String workflowName, Map<String, List<String>> workflowConfig, StateMachine workflowLogic) {
         this.workflowName = workflowName;
         this.workflowStatus = WStatus.IDLE;
         this.workflowConfig = workflowConfig;
         this.workflowLogic = workflowLogic;
+    }
+    
+    /**
+     * A copy constructor of Workflow class.
+     * <p>
+     * Creates a new Workflow object from the object provided as argument.
+     * 
+     * @param w The original workflow that will be used as template to create the new Workflow object
+     * @throws IllegalAccessException when the class implementing the Map interface for workflowConfig
+     * has no default constructor to make a copy of it
+     */
+    public Workflow(Workflow w) throws IllegalAccessException {
+        this.workflowName = w.getWorkflowName();
+        this.workflowStatus = w.getWorkflowStatus();
+        
+        Map<String, List<String>> tempWorkflowConfig = null;
+        try {
+            tempWorkflowConfig = w.getWorkflowConfig().getClass().getDeclaredConstructor().newInstance();
+            tempWorkflowConfig.putAll(w.getWorkflowConfig());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (tempWorkflowConfig != null) {
+            this.workflowConfig = tempWorkflowConfig;
+        }
+        else {
+            throw new IllegalAccessException("Copy constructor can not duplicate WorkflowConfig, "
+                    + "Map implementation class has no default constructor");
+            /* Better this Map implementation than an immutable Map, as we add the parameters 
+             * to the workflowConfig Map before execution
+             */
+           // this.workflowConfig = new HashMap<String, List<String>>(w.getWorkflowConfig());
+        }
+        this.workflowLogic = new StateMachine(w.getWorkflowLogic());
     }
 
     public WStatus getWorkflowStatus() {
@@ -43,7 +78,7 @@ public class Workflow {
     public StateMachine getWorkflowLogic() {
         return workflowLogic;
     }
-    
+
     /**
      * This method encapsulates the logic to execute a Workflow. 
      * <p>
@@ -51,7 +86,7 @@ public class Workflow {
      * Therefore the Workflow execution is equivalent to the execution of the State Machine.
      * <p>
      * This method has a pre-condition: the Workflow from which it is called must be in ACTIVE state,
-     * otherwise it will throw an {@code IllegalArgumentException}.
+     * otherwise it will throw an {@code IllegalStateException}.
      * 
      * 
      * @return The same as in {@link se.ltu.workflow.executor.state_machine.StateMachine#update()}. 
@@ -61,19 +96,52 @@ public class Workflow {
         if (this.getWorkflowStatus() != WStatus.ACTIVE) {
             throw new IllegalStateException("Workflow is not ACTIVE yet, so it should not be executed");
         }
-        else {
-            // Add configuration to State Machine
-            workflowConfig.forEach((k,v)-> this.getWorkflowLogic().setVariable(k, v));
+
+        // Add configuration parameters to State Machine
+        workflowConfig.forEach((k,v)-> this.getWorkflowLogic().setVariable(k, v));
+        
+        // Execute all the transitions of the State Machine
+        while(this.getWorkflowLogic().update());
             
-            // Execute all the transitions of the State Machine
-            while(this.getWorkflowLogic().update());
-                
-            // Set to status DONE the Workflow executed
-            this.setWorkflowStatus(WStatus.DONE);
-            
-            // Return the result? Or nothing?
-            return false;
+        // Set to status DONE the Workflow executed
+        this.setWorkflowStatus(WStatus.DONE);
+        
+        // Return the result? Or nothing?
+        return false;
+        
+    }
+    
+    /**
+     * This method ends the Workflow, storing all outputs before it can be candidate for
+     * garbage collection.
+     * <p>
+     * This method has a pre-condition: the Workflow from which it is called must be in DONE state,
+     * otherwise it will throw an {@code IllegalStateException}.
+     * <p>
+     * Implementation status: At the moment the outputs are not stored anywhere.
+     * 
+     * @return True when the Workflow ends successfully, which now is always the case
+     */
+    public Boolean endWorkflow() {
+        if (this.getWorkflowStatus() != WStatus.DONE) {
+            throw new IllegalStateException("Workflow is not DONE yet, so it should not be ended");
         }
+        //cleanWorkflow();
+        return true;
+    }
+    
+    
+    /**
+     * This method updates the Workflow, by cleaning all inputs and outputs of the State Machine 
+     * and returning it to its default status.
+     * <p>
+     * Implementation status: Currently only sets the current state to 0, not resets the Events 
+     * neither the Environment
+     */
+    public void cleanWorkflow() {
+        // Can not clean Events and Environment of State Machine, no methods available?
+        this.workflowLogic.setCurrentState(0);
+
     }
     
     /**
@@ -100,6 +168,10 @@ public class Workflow {
         return sameName;
     }
 
+    /**
+     * Provides a hashCode for the Workflow objects, as they will be stored in Sets and Maps that will
+     * use at some point its hash for storage or comparison operations.
+     */
     @Override
     public int hashCode() {
         final int prime = 31;

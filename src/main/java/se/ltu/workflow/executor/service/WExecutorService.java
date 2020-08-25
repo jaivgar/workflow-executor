@@ -45,7 +45,6 @@ public class WExecutorService {
         Runnable workflowsRunning = () -> {
             
             QueuedWorkflow workflowOngoing;
-            Boolean workflowSuccesful;
             
             try {
                 while(true) {
@@ -53,26 +52,30 @@ public class WExecutorService {
                      * will block the thread whenever Queue is empty
                      */
                     workflowOngoing = workflowsForExecution.take();
+                    logger.info("Consuming Workflow " + workflowOngoing.getWorkflowName() + " with ID=" + workflowOngoing.getId());
                     
+                    // Set this Workflow as the active one
                     workflowOngoing.setWorkflowStatus(WStatus.ACTIVE);
                     
                     // This method will trigger the execution of the State Machine as the representation of the Workflow
                     workflowOngoing.startWorkflow();
+                    logger.info("The Workflow entered queue at: " + workflowOngoing.getQueueTime());
+                    logger.info("The Workflow started at: " + workflowOngoing.getStartTime());
+                    logger.info("The Workflow finished at: " + workflowOngoing.getEndTime());
                     
                     // This is one way to obtain results from a State Machine, in this case we use similar HTTP codes
                     if((int)workflowOngoing.getWorkflowLogic().getEnvironment().get("OutputStateMachine") == 200) {
-                        workflowOngoing.setWorkflowStatus(WStatus.DONE);
+                        logger.info("The Workflow ended succesfully");
                     }
                 }
-                
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 logger.error("Thread executing State Machines inside WExecutorService has runned into problem");
                 System.exit(1);
             }
-            
         };
-        workflowsExecuting = new Thread(workflowsRunning, "Running workflows thread");
+        
+        workflowsExecuting = new Thread(workflowsRunning, "Workflow consumer");
         workflowsExecuting.start();
     }
     
@@ -101,22 +104,32 @@ public class WExecutorService {
         
         // Search for the workflow in the workflowsStored
         /* One Option was to use the contains() method of Set class, that required to Override the default
-         * equals() method of Object class and to create a Workflow with only a name and config.
+         * equals() method of Object class and to create a Workflow with only a name and config to compare.
          * 
-         * But the goal was to enforced a complete object in the Workflow constructor, so switched towards a
-         * foreach search of the elements in the Set for a matching name.
+         * But then to retrieve it we will have to iterate through the set, therefore it seems more straightforward
+         * to iterate through the elements from the start, and compare each time with the reference. This also enables
+         * to stop when we find our target.
          */
         Workflow requestedWorkflow = new Workflow(workflowName, workflowConfig, null);
         for (Workflow w : workflowsStored) {
             if (w.equals(requestedWorkflow)) {
-                requestedWorkflow = w;
-                logger.info("Workflow with requested parameter found in memory: " + requestedWorkflow.getWorkflowName()); 
+                try {
+                    requestedWorkflow = new Workflow(w);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                    logger.error("The Workflow stored does not support execution, due to problem when copying"
+                            + "its Workflow Configuration, repair WorkflowConfiguration Map implementation.");
+                    return null;
+                }
+                logger.info("Workflow with requested parameter found in memory: " + requestedWorkflow.getWorkflowName());
+                break;
             }
         }
         if(requestedWorkflow.getWorkflowLogic() == null) {
             // The workflow was not found, so exit with a negative value (null or exception?)
             return null;
         }
+        
         // Create a new QueuedWorkflow with the configuration parameters and add to Queue
         requestedWorkflow.getWorkflowConfig().putAll(workflowConfig);
         QueuedWorkflow toExecuteWork = new QueuedWorkflow(requestedWorkflow);
