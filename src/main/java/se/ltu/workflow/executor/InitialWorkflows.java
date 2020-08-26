@@ -94,6 +94,8 @@ public class InitialWorkflows {
                                 Map<String,OrchestrationResultDTO> serviceAndAddress = new HashMap<>();
                                 System.out.println("Transition 0: Start orchestration of services "
                                         + "in configuration");
+                                // If the Arrowhead context in not updated with Orchestrator info at start-up, it
+                                // should be initialized here before any attempt of orchestration
                                 for(String serviceDefinition : toFindServices) {
                                     try {
                                         OrchestrationResultDTO serviceFound = orchestrate(serviceDefinition);
