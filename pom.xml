@@ -30,7 +30,20 @@
    	</properties>
 
   	<dependencies>
-  	
+  		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+			<exclusions>
+				<exclusion>
+					<!-- This logger looks better on command line, but no idea how to configure it
+					and other Arrowhead systems use log4j2, so need to exclude as it produces 
+					"SLF4J: Class path contains multiple SLF4J bindings."-->
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		
 	    <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -99,6 +112,7 @@
 	                  				<directory>src/main/resources</directory>
 	                  				<includes>
 	            						<include>application.properties</include>
+	            						<include>log4j2.xml</include>
 	               	  				</includes>
 	               				</resource>
 	              			</resources>
