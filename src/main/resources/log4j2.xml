@@ -1,19 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN" monitorInterval="30">
     <Properties>
-        <Property name="LOG_PATTERN">
+        <Property name="LOG_PATTERN_CONSOLE">
             %style{%d{yyyy-MM-dd HH:mm:ss.SSS}{Europe/Stockholm}}{dim,white} %highlight{%5p}{FATAL=red blink, ERROR=red, WARN=yellow bold, INFO=magenta, DEBUG=green bold, TRACE=blue} --- [%21.21t] %style{%-40.40c{1.}}{cyan} : %m%n%ex
         </Property>
+        <Property name="LOG_PATTERN_FILE">
+            %d{yyyy-MM-dd HH:mm:ss.SSS}{Europe/Stockholm} %5p --- [%20.20t] %-40.40c{1.} : %m%n%ex
+        </Property>
 		<Property name="CONSOLE_FILE_LEVEL">DEBUG</Property>
+		<Property name="NORMAL_LEVEL">INFO</Property>
 		<Property name="LOG_DIR">.</Property>
     </Properties>
     <Appenders>
         <Console name="ConsoleAppender" target="SYSTEM_OUT" follow="true">
-        	<PatternLayout pattern="${LOG_PATTERN}" disableAnsi="false"/>
+        	<PatternLayout pattern="${LOG_PATTERN_CONSOLE}" disableAnsi="false"/>
         </Console>
 		<RollingFile name="FileAppender" fileName="${LOG_DIR}/workflowExecutor.log" filePattern="${LOG_DIR}/WExecutor-%d{yyyy-MM-dd}-%i.log">
 	    	<PatternLayout>
-	        	<Pattern>${LOG_PATTERN}</Pattern>
+	        	<Pattern>${LOG_PATTERN_FILE}</Pattern>
 	    	</PatternLayout>
 	    	<Policies>
 	        	<SizeBasedTriggeringPolicy size="100MB" />
@@ -27,11 +31,11 @@
             <AppenderRef ref="ConsoleAppender" /> <!-- comment out this one in production environment -->
             <AppenderRef ref="FileAppender" />
         </Root>
-		<Logger name="eu.arrowhead.common" level="${CONSOLE_FILE_LEVEL}" additivity="true"></Logger>
-		<Logger name="eu.arrowhead.core" level="${CONSOLE_FILE_LEVEL}" additivity="true"></Logger>
+		<Logger name="eu.arrowhead.common" level="${NORMAL_LEVEL}" additivity="true"></Logger>
+		<Logger name="eu.arrowhead.core" level="${NORMAL_LEVEL}" additivity="true"></Logger>
 		<Logger name="se.ltu.workflow.executor" level="${CONSOLE_FILE_LEVEL}" additivity="true"></Logger>
-		
-		<Logger name="eu.arrowhead.client" level="${CONSOLE_FILE_LEVEL}" additivity="true"></Logger> <!-- For debugging -->
+		 <!-- For debugging -->
+		<Logger name="eu.arrowhead.client" level="${CONSOLE_FILE_LEVEL}" additivity="true"></Logger>
 		
     </Loggers>
 </Configuration>
