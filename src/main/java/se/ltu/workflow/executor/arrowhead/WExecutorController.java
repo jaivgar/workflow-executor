@@ -42,6 +42,7 @@ public class WExecutorController {
 	//-------------------------------------------------------------------------------------------------
 	@GetMapping(path = CommonConstants.ECHO_URI)
 	public String echoService() {
+	    logger.info("Receiving echo request");
 		return "Got it!";
 	}
 	

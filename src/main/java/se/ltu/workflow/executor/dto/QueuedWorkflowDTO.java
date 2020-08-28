@@ -2,6 +2,9 @@ package se.ltu.workflow.executor.dto;
 
 import java.time.ZonedDateTime;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import se.ltu.workflow.executor.service.QueuedWorkflow;
 import se.ltu.workflow.executor.service.WStatus;
 
@@ -14,6 +17,28 @@ public class QueuedWorkflowDTO {
     final ZonedDateTime startTime;
     final ZonedDateTime endTime;
     
+    /**
+     * Creates a new {@code QueuedWorkflowDTO} and automatically sets its fields
+     * from the underlining queued workflow.
+     * 
+     * @param queuedWorkflow  The QueuedWorkflow object used as data source, can not be null
+     * @return  The DTO object with the same parameters as the underlining workflow
+     * @throws IllegalArgumentException if the input parameter queuedWorkflow is null
+     */
+    public static QueuedWorkflowDTO fromQueuedWorkflow(QueuedWorkflow queuedWorkflow) {
+        // If I want a String representation of the date
+        //String dateNow = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
+        if(queuedWorkflow == null) {
+            throw new IllegalArgumentException("Input argument \"QueuedWorkflow\" can not be null");
+        }
+        return new QueuedWorkflowDTO(queuedWorkflow.getId(), 
+                                     queuedWorkflow.getWorkflowName(),
+                                     queuedWorkflow.getWorkflowStatus(),
+                                     queuedWorkflow.getQueueTime(),
+                                     queuedWorkflow.getStartTime(),
+                                     queuedWorkflow.getEndTime());
+    }
+    
     public int getId() {
         return id;
     }
@@ -24,6 +49,16 @@ public class QueuedWorkflowDTO {
 
     public WStatus getWorkflowStatus() {
         return workflowStatus;
+    }
+    
+    // From repository arrowhead-f/core-java-spring, pull request:Implement toString methods in DTOs #259
+    @Override
+    public String toString() {
+        try {
+            return new ObjectMapper().writeValueAsString(this);
+        } catch (final JsonProcessingException ex) {
+            return "toString failure";
+        }
     }
     
     /**
@@ -54,26 +89,6 @@ public class QueuedWorkflowDTO {
         this.endTime = endTime;
     }
     
-    /**
-     * Creates a new {@code QueuedWorkflowDTO} and automatically sets its fields
-     * form the underlining stored workflow.
-     * 
-     * @param queuedWorkflow  The workflow object used as data source
-     * @return  The DTO object with the same parameters as the underlining workflow
-     */
-    public static QueuedWorkflowDTO fromQueuedWorkflow(QueuedWorkflow queuedWorkflow) {
-        // If I want a String representation of the date
-        //String dateNow = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
-        if(queuedWorkflow == null) {
-            throw new IllegalArgumentException("Input argument \"workflow\" can not be null");
-        }
-        return new QueuedWorkflowDTO(queuedWorkflow.getId(), 
-                                     queuedWorkflow.getWorkflowName(),
-                                     queuedWorkflow.getWorkflowStatus(),
-                                     queuedWorkflow.getQueueTime(),
-                                     queuedWorkflow.getStartTime(),
-                                     queuedWorkflow.getEndTime());
-    }
     
     /*
      * To Delete after revision and copying the rules to the QueuedWorkflow for object creation:

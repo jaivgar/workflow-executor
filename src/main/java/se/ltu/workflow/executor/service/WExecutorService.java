@@ -145,8 +145,16 @@ public class WExecutorService {
         return toExecuteWork;
     }
     
+    /**
+     * Adds new Workflows to the Workflow Executor, to be stored locally and executed on demand.
+     * 
+     * @param newWorkflowType
+     * 
+     * @return True if the Workflow is new and is added to internal memory. False if it is not added,
+     * because it already exist or due to other problems.
+     */
     private Boolean addWorkflowType(Workflow newWorkflowType) {
-        // TODO
-        return false;
+        
+        return workflowsStored.add(newWorkflowType);
     }
 }
