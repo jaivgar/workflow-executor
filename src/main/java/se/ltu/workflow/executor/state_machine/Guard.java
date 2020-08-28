@@ -11,7 +11,7 @@ import java.util.Objects;
  * of the {@link StateMachine}, being the environment a group of variables too, with 
  * an assigned value.
  * <p>
- * The guard name must be not null, but the value may be null
+ * The guard name must be not null, but the guard value may be null
  * 
  * @see #checkGuard
  * @see GuardTest#testNullGuardCreationAndEvaluation()

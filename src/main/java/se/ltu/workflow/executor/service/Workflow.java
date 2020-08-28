@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import se.ltu.workflow.executor.state_machine.StateMachine;
 
 public class Workflow {
@@ -17,6 +20,8 @@ public class Workflow {
     final private StateMachine workflowLogic;
     
     //TODO: Add variable to store Workflow results? Not needed if workflowConfig is a mutable Map
+    
+    private final Logger logger = LogManager.getLogger(Workflow.class);
     
     public Workflow(String workflowName, Map<String, List<String>> workflowConfig, StateMachine workflowLogic) {
         this.workflowName = workflowName;
@@ -100,8 +105,22 @@ public class Workflow {
         // Add configuration parameters to State Machine
         workflowConfig.forEach((k,v)-> this.getWorkflowLogic().setVariable(k, v));
         
+        // Log the entry path to the State Machine
+        logger.info("Workflow " + this.getWorkflowName() + " starts execution in state "
+                + this.getWorkflowLogic().getCurrentState() + "(" 
+                + this.getWorkflowLogic().getActiveState().name() + ")");
+        logger.debug("Events present: " + this.getWorkflowLogic().getEvents());
+        logger.debug("Environment contains variables: " + this.getWorkflowLogic().getEnvironment());
+        
         // Execute all the transitions of the State Machine
-        while(this.getWorkflowLogic().update());
+        while(this.getWorkflowLogic().update()) {
+            // Log the progress through the states
+            logger.info("Workflow " + this.getWorkflowName() + " in state "
+                    + this.getWorkflowLogic().getCurrentState() + "(" 
+                    + this.getWorkflowLogic().getActiveState().name() + ")");
+            logger.debug("Events present: " + this.getWorkflowLogic().getEvents());
+            logger.debug("Environment contains variables: " + this.getWorkflowLogic().getEnvironment());
+        }
             
         // Set to status DONE the Workflow executed
         this.setWorkflowStatus(WStatus.DONE);
@@ -127,6 +146,7 @@ public class Workflow {
             throw new IllegalStateException("Workflow is not DONE yet, so it should not be ended");
         }
         //cleanWorkflow();
+        logger.info("Workflow " + this.getWorkflowName() + " is finished");
         return true;
     }
     
