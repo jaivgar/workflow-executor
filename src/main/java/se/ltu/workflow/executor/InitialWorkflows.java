@@ -373,9 +373,10 @@ public class InitialWorkflows {
                  * which this method will be call
                  */
                 //System.out.println("Changing to state " + w.getWorkflowLogic()... targetState());
+                return;
             }
         }
-        throw new IllegalArgumentException("Workflow name does not correspond to any Workflow stored in this system");
+        throw new IllegalArgumentException("Workflow name \""+ workflowName + "\" does not correspond to any Workflow stored in this system");
     }
     
     //-------------------------------------------------------------------------------------------------

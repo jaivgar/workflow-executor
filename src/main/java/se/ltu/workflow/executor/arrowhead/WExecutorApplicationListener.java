@@ -107,15 +107,16 @@ public class WExecutorApplicationListener extends ApplicationInitListener{
                 logger.info("TokenSecurityFilter will not be actived");
             }
         }
-        /* Initialize Arrowhead Context, needed before orchestration can proceed (In this 
-         * system or in any State Machine executed by the Workflow Executor
-         */
-        arrowheadService.updateCoreServiceURIs(CoreSystem.ORCHESTRATOR);
         
         // Orchestrator needed to find the services provided by other systems
         if (!waitCoreSystemReady(CoreSystem.ORCHESTRATOR, 10)) {
             throw new RuntimeException("Service Registry not available in network");
         }
+        
+        /* Initialize Arrowhead Context, needed before orchestration can proceed (In this 
+         * system or in any State Machine executed by the Workflow Executor
+         */
+        arrowheadService.updateCoreServiceURIs(CoreSystem.ORCHESTRATOR);
 
         // Register Workflow Executor services into ServiceRegistry
         // This service provides the workflows types/templates that are stored in the executor

@@ -107,7 +107,7 @@ public class Workflow {
         
         // Log the entry path to the State Machine
         logger.info("Workflow " + this.getWorkflowName() + " starts execution in state "
-                + this.getWorkflowLogic().getCurrentState() + "(" 
+                + this.getWorkflowLogic().getCurrentState() + " (" 
                 + this.getWorkflowLogic().getActiveState().name() + ")");
         logger.debug("Events present: " + this.getWorkflowLogic().getEvents());
         logger.debug("Environment contains variables: " + this.getWorkflowLogic().getEnvironment());
@@ -116,7 +116,7 @@ public class Workflow {
         while(this.getWorkflowLogic().update()) {
             // Log the progress through the states
             logger.info("Workflow " + this.getWorkflowName() + " in state "
-                    + this.getWorkflowLogic().getCurrentState() + "(" 
+                    + this.getWorkflowLogic().getCurrentState() + " (" 
                     + this.getWorkflowLogic().getActiveState().name() + ")");
             logger.debug("Events present: " + this.getWorkflowLogic().getEvents());
             logger.debug("Environment contains variables: " + this.getWorkflowLogic().getEnvironment());

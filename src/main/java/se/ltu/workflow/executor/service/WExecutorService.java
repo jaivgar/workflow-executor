@@ -131,6 +131,7 @@ public class WExecutorService {
         }
         
         // Create a new QueuedWorkflow with the configuration parameters and add to Queue
+        requestedWorkflow.getWorkflowConfig().clear();
         requestedWorkflow.getWorkflowConfig().putAll(workflowConfig);
         QueuedWorkflow toExecuteWork = new QueuedWorkflow(requestedWorkflow);
         try {
