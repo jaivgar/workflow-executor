@@ -567,14 +567,6 @@ public class InitialWorkflows {
             final Object payload, String[] metadata) {
         final String token = orchestrationResult.getAuthorizationTokens() == null ? null : orchestrationResult.getAuthorizationTokens().get(getInterface());
         
-        // arrowheadService.consumeServiceHTTP() throws NullPointerException if queryParams are null or not even
-        if(metadata == null) {
-            metadata = new String[2];
-            metadata[0] = "";
-            metadata[1] = "";
-            
-        }
-        
         return (T) arrowheadService.consumeServiceHTTP(
                 ResponseDTO.getClass(), // The type of object that the Response will be matched to
                 HttpMethod.valueOf(orchestrationResult.getMetadata().get(WExecutorConstants.HTTP_METHOD)),
