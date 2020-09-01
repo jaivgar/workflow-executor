@@ -29,6 +29,7 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 
 import se.ltu.workflow.executor.dto.WorkflowDTO;
 import se.ltu.workflow.executor.dto.QueuedWorkflowDTO;
+import se.ltu.workflow.executor.service.QueuedWorkflow;
 import se.ltu.workflow.executor.service.Workflow;
 import se.ltu.workflow.executor.state_machine.Event;
 import se.ltu.workflow.executor.state_machine.Guard;
@@ -129,9 +130,8 @@ public class InitialWorkflows {
         
         StateMachine workflowTestMachine = new StateMachine(
                 Arrays.asList(
-                    new State("Start", 0),
-                    new State("Init", 1,3),
-                    new State("Work", 2,3),
+                    new State("Start orchestration", 0),
+                    new State("Test services", 1,2,3,4),
                     new State("End")
                     ),
                 Arrays.asList(
@@ -139,32 +139,36 @@ public class InitialWorkflows {
                         null, 
                         null, 
                         (env, events) -> {
-                            // Print the Events and Environment status at the start of each Transition
+                            /* Print the State, Events and Environment status at the start of each Transition 
+                             * retrieved from State Machine context
+                             */
                             // Events present here come from outside the State Machine
                             printEvents(events, "start of Transition 0");
                             printEnvironment(env, "start of Transition 0");
-                            
-                            // How to obtain the state from inside the State Machine
-                            printCurrentState(workflowTestName);
-                            
+//                            printCurrentState(workflowTestName);
                             
                             // Check services needed in this State Machine are available in Local Cloud now
-                            System.out.println("Transition 0: Look at State Machine configuration");
+                            System.out.println("Transition 0: Look at State Machine input configuration");
                             List<String> toFindServices = (List<String>) env.get("Services");
                             if(toFindServices != null) {
                                 Map<String,OrchestrationResultDTO> serviceAndAddress = new HashMap<>();
                                 System.out.println("Transition 0: Start orchestration of services "
-                                        + "in configuration");
-                                // If the Arrowhead context in not updated with Orchestrator info at start-up, it
-                                // should be initialized here before any attempt of orchestration
+                                        + "present in configuration");
                                 for(String serviceDefinition : toFindServices) {
                                     try {
+                                        /* If the Arrowhead context in not updated with Orchestrator info at start-up,
+                                         * it should be initialized here before any attempt of orchestration
+                                         */
                                         OrchestrationResultDTO serviceFound = orchestrate(serviceDefinition);
                                         serviceAndAddress.put(serviceDefinition, serviceFound);
+                                        env.put(serviceDefinition, true);
                                     } catch (final ArrowheadException e) {
+                                        /* If the orchestration did not finish successfully, throw error Events to
+                                         * transition to an error handling State of the State Machine
+                                         */
                                         events.add(new Event("Init-Fail"));
-                                        e.printStackTrace();
                                         env.put("Error", "Service \"" + serviceDefinition + "\" not found in Local Cloud");
+                                        e.printStackTrace();
                                         return;
                                     }
                                 }
@@ -172,10 +176,12 @@ public class InitialWorkflows {
                                 events.add(new Event("Init-Success"));
                             }
                             else {
-                                env.put("Error","No Services provided for initial configuration");
+                                env.put("Error","No serviceDefinitions (service name) provided in input configuration");
                                 events.add(new Event("Init-Fail"));
                             }
-                            
+                            /* Events present here, which are different than at the start of the Transition, come from 
+                             * the Action executed inside the Transition
+                             */
                             printEvents(events, "end of Transition 0");
                         },
                         // Next State:
@@ -184,108 +190,181 @@ public class InitialWorkflows {
                     new Transition(
                         new LogicExpression<Event,Set<Event>>(LogicOperator.OR, 
                                                               List.of(new Event("Init-Success"), new Event("More-Work"))), 
-                        null,
+                        new LogicExpression<Guard,Map<String, Object>>(null, List.of(
+                                                   new Guard(WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION, 
+                                                   true))),
                         (env, events) -> {
-                            // Print the Events and Environment at the start of each Transition
                             printEvents(events, "start of Transition 1");
                             printEnvironment(env, "start of Transition 1");
+//                            printCurrentState(workflowTestName);
                             
-                            // Test services found
-                            System.out.println("Transition 1: Test services found");
+                            // Test service
+                            System.out.println("Transition 1: Test Service available Workflow types");
                             Map<String,OrchestrationResultDTO> serviceAndAddress = 
                                     (Map<String, OrchestrationResultDTO>) env.get("ServicesAddress");
-
+                            /* Use the containsKey() method better than get() to distinguish between the 2 cases:
+                             * when return value is null because key does not exist, or because value of key is null
+                             */
                             if (serviceAndAddress.containsKey(WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION)) {
-                                System.out.println("Transition 1: Test Available Workflow type service");
                                 OrchestrationResultDTO WExecutorInfo = serviceAndAddress.get(
                                         WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION);
                                 //List<WorkflowDTO> serviceResult = consumeService(Collections.emptyList(), WExecutorInfo, null, null);
-                                List<WorkflowDTO> serviceResult = consumeService(new ArrayList<WorkflowDTO>(), WExecutorInfo, null, null);
+                                List<WorkflowDTO> serviceResult = consumeService(new ArrayList<WorkflowDTO>(),
+                                                                                    WExecutorInfo, null, null);
                                 env.put("AvailableWorkflows", serviceResult);
-                                // Not sure if we can print a list like this, but let's see
                                 System.out.println("Workflows available for execution: " + serviceResult);
                                 if(serviceResult.isEmpty()) {
-                                    // This workflow should be in the list
+                                    // This workflow type should be in the list
                                     events.add(new Event("Work-error"));
                                     env.put("Error", "The list of Workflows Available is empty");
                                 }
+                                // Check if the request asked for testing more services
+                                List<String> toFindServices = (List<String>) env.get("Services");
+                                Boolean serviceRemoved = toFindServices.remove(
+                                            WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION);
+                                if(toFindServices.size()!= 0) {
+                                    events.add(new Event("More-Work"));
+                                }
+                                else {
+                                    events.add(new Event("Work-done"));
+                                }
+                                // Set flag corresponding to this service as false
+                                Boolean newValueFlag = (Boolean) env.computeIfPresent(
+                                                                WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION,
+                                                                (k,v) -> v = false ); 
                             }
+                            else {
+                                events.add(new Event("Work-error"));
+                                env.put("Error","Service " + WExecutorConstants.PROVIDE_AVAILABLE_WORKFLOW_SERVICE_DEFINITION 
+                                        + "was requested in input configuration, but its address could not be found, "
+                                        + "possible error when orchestrated");
+                            }
+                            printEvents(events, "end of Transition 1");
+                        },
+                        // Next State:
+                        1
+                    ),
+                    new Transition(
+                        new LogicExpression<Event,Set<Event>>(LogicOperator.OR, 
+                                                              List.of(new Event("Init-Success"), new Event("More-Work"))), 
+                        new LogicExpression<Guard,Map<String, Object>>(null, List.of(
+                                                new Guard(WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION, 
+                                                true))),
+                        (env, events) -> {
+                            printEvents(events, "start of Transition 2");
+                            printEnvironment(env, "start of Transition 2");
+//                            printCurrentState(workflowTestName);
+                            
+                            // Test service
+                            System.out.println("Transition 2: Test Service Workflows in-execution");
+                            Map<String,OrchestrationResultDTO> serviceAndAddress = 
+                                    (Map<String, OrchestrationResultDTO>) env.get("ServicesAddress");
                             
                             if (serviceAndAddress.containsKey(WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION)) {
-                                System.out.println("Transition 1: Test In-execution Workflow service");
                                 OrchestrationResultDTO WExecutorInfo = serviceAndAddress.get(
                                         WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION);
                                 //List<QueuedWorkflowDTO> serviceResult = consumeService(Collections.emptyList(), WExecutorInfo, null, null);
                                 List<QueuedWorkflowDTO> serviceResult = consumeService(new ArrayList<QueuedWorkflowDTO>(), WExecutorInfo, null, null);
                                 env.put("InExecutionWorkflows", serviceResult);
-                                // Not sure if we can print a list like this, but let's see
                                 System.out.print(serviceResult);
+                                // No workflow has started execution yet
                                 if(serviceResult.isEmpty()) {
-                                    // No workflow has started execution yet
-                                    events.add(new Event("Work-ongoing"));
+                                    // This workflow is on-going so it should be in the list
+                                    events.add(new Event("Work-error"));
+                                    env.put("Error", "The list of Workflows In-Execution is empty");
+                                }
+                                List<String> toFindServices = (List<String>) env.get("Services");
+                                Boolean serviceRemoved = toFindServices.remove(
+                                            WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION);
+                                if(toFindServices.size()!= 0) {
+                                    events.add(new Event("More-Work"));
                                 }
                                 else {
                                     events.add(new Event("Work-done"));
-                                    env.put("WorkResult", 1);
                                 }
+                                // Set flag corresponding to this service as false
+                                Boolean newValueFlag = (Boolean) env.computeIfPresent(
+                                                                WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION,
+                                                                (k,v) -> v = false ); 
                             }
-                            printEvents(events, "end of Transition 1");
-                        },
-                        // Next State:
-                        2
-                    ),
-                    // This transition creates an infinite loop
-                    new Transition(
-                        //new LogicExpression<Event,Set<Event>>(null, new HashSet<Event>(Stream.of("EVENT-X").collect(Collectors.toUnmodifiableSet()))),
-                        null, 
-                        new LogicExpression<Guard,Map<String, Object>>(LogicOperator.NOT, 
-                                                                       List.of(new Guard("WorkResult", 1))), 
-                        (env, events) -> {
-                            // Print the Events and Environment at the start of each Transition
-                            printEvents(events, "start of Transition 2");
-                            printEnvironment(env, "start of Transition 2");
-                            
-                            //Wait because we created an infinite loop
-                            try {
-                                Thread.sleep(2000);
-                            } catch (InterruptedException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            }
-                            
-                            System.out.println("Transition 2: Start Workflow execution");
-                            Map<String,OrchestrationResultDTO> serviceAndAddress = 
-                                    (Map<String, OrchestrationResultDTO>) env.get("ServicesAddress");
-                            if (serviceAndAddress.containsKey(WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION)) {
-                                OrchestrationResultDTO WExecutorInfo = serviceAndAddress.get(
-                                        WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION);
-                                QueuedWorkflowDTO test = null;
-                                //QueuedWorkflowDTO serviceResult = consumeService(null, WExecutorInfo, null, null);
-                                QueuedWorkflowDTO serviceResult = consumeService(test, WExecutorInfo, null, null);
-                                if(serviceResult  == null) {
-                                    events.add(new Event("Work-error"));
-                                    env.put("Error", "The returned QueuedWorkflowDTO is not well formed, is empty");
-                                }
-                                else {
-                                    events.add(new Event("More-Work"));
-                                }
+                            else {
+                                events.add(new Event("Work-error"));
+                                env.put("Error","Service " + WExecutorConstants.PROVIDE_IN_EXECUTION_WORKFLOW_SERVICE_DEFINITION 
+                                        + "was requested in input configuration, but its address could not be found, "
+                                        + "possible error when orchestrated");
                             }
                             printEvents(events, "end of Transition 2");
                         },
                         // Next State:
-                        2
+                        1
+                    ),
+                    new Transition(
+                        new LogicExpression<Event,Set<Event>>(LogicOperator.OR, 
+                                                              List.of(new Event("Init-Success"), new Event("More-Work"))), 
+                        new LogicExpression<Guard,Map<String, Object>>(null, List.of(
+                                                new Guard(WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION, 
+                                                true))),
+                        (env, events) -> {
+                            printEvents(events, "start of Transition 3");
+                            printEnvironment(env, "start of Transition 3");
+//                            printCurrentState(workflowTestName);
+                            
+                            // Test service
+                            System.out.println("Transition 3: Test Service execute workflow");
+                            Map<String,OrchestrationResultDTO> serviceAndAddress = 
+                                    (Map<String, OrchestrationResultDTO>) env.get("ServicesAddress");
+                            
+                            if (serviceAndAddress.containsKey(WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION)) {
+                                OrchestrationResultDTO WExecutorInfo = serviceAndAddress.get(
+                                        WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION);
+                                
+                                // Create WorkflowDTO needed as input to the service request
+                                WorkflowDTO requestBody = new WorkflowDTO(workflowTestName, null);
+                                // Create QueuedWorkflowDTO used to store the service response
+                                QueuedWorkflowDTO classReference = new QueuedWorkflowDTO();
+                                //QueuedWorkflowDTO serviceResult = consumeService(null, WExecutorInfo, null, null);
+                                QueuedWorkflowDTO serviceResult = consumeService(classReference, WExecutorInfo, requestBody, null);
+                                if(serviceResult  == null) {
+                                    // This workflow has already being executed once, so it should be possible to do it again
+                                    events.add(new Event("Work-error"));
+                                    env.put("Error", "The returned QueuedWorkflowDTO is not well formed, is empty");
+                                }
+                                
+                                List<String> toFindServices = (List<String>) env.get("Services");
+                                Boolean serviceRemoved = toFindServices.remove(
+                                            WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION);
+                                if(toFindServices.size()!= 0) {
+                                    events.add(new Event("More-Work"));
+                                }
+                                else {
+                                    events.add(new Event("Work-done"));
+                                }
+                                // Set flag corresponding to this service as false
+                                Boolean newValueFlag = (Boolean) env.computeIfPresent(
+                                                                WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION,
+                                                                (k,v) -> v = false ); 
+                            }
+                            else {
+                                events.add(new Event("Work-error"));
+                                env.put("Error","Service " + WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION 
+                                        + "was requested in input configuration, but its address could not be found, "
+                                        + "possible error when orchestrated");
+                            }
+                            printEvents(events, "end of Transition 3");
+                        },
+                        // Next State:
+                        1
                     ),
                     new Transition(
                         new LogicExpression<Event,Set<Event>>(LogicOperator.OR, 
                                 List.of(new Event("Init-Fail"), new Event("Work-error"),new Event("Work-done"))), 
                         null, 
                         (env, events) -> {
-                            // Print the Events and Environment at the start of each Transition
-                            printEvents(events, "start of Transition 3");
-                            printEnvironment(env, "start of Transition 3");
+                            printEvents(events, "start of Transition 4");
+                            printEnvironment(env, "start of Transition 4");
+//                            printCurrentState(workflowTestName);
                             
-                            
-                            System.out.println("Transition 3: End State Machine and output results");
+                            System.out.println("Transition 4: End State Machine and output its results");
                             if (env.containsKey("Error")) {
                                 env.put("OutputStateMachine", 500);
                             }
@@ -297,7 +376,7 @@ public class InitialWorkflows {
                             printEnvironment(env, "end of State Machine");
                         }, 
                         // Next State:
-                        3
+                        2
                     )
                 ));
         
@@ -349,9 +428,26 @@ public class InitialWorkflows {
         }
     }
     
+    // TODO: Implement method by injecting the WExecutorService and retrieving the list with active Workflows
+    private void printCurrentState(String workflowName) {
+        // Need to access the Queue where the active workflows are stored
+        for(Workflow w : this.getWorkflows()) {
+            if(w.getWorkflowName().equals(workflowName)) {
+                System.out.println("State Machine in state " + w.getWorkflowLogic().getCurrentState() 
+                        + " (" + w.getWorkflowLogic().getActiveState().name() + ")");
+                /* I can not get the next state as I can not find a reference to the Transition from 
+                 * which this method will be call
+                 */
+                //System.out.println("Changing to state " + w.getWorkflowLogic()... targetState());
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Workflow name \""+ workflowName + "\" does not correspond to any Workflow stored in this system");
+    }
+    
     /**
      * Retrieves and prints the state number and (name) in which the State Machine was at the
-     * start of the transition.
+     * start of the transition. Not works as intended, always prints the same.
      * <p>
      * If the workflowName is not the one corresponding to the Workflow from which the transition
      * that calls this method is executed, the output will not make sense. It will probably be
@@ -363,12 +459,16 @@ public class InitialWorkflows {
      * @throws IllegalArgumentException  if the workflowName parameter does not match the workflows
      * of this Workflow Executor system
      */
-    private void printCurrentState(String workflowName) {
-     // How to obtain the state from inside the State Machine
+    /* How to NOT obtain the state from inside the State Machine, it will always print the same result,
+     * the first state that by default is 0
+     */
+    @Deprecated
+    private void printCurrentStateBad(String workflowName) {
+        
         for(Workflow w : this.getWorkflows()) {
             if(w.getWorkflowName().equals(workflowName)) {
                 System.out.println("State Machine in state " + w.getWorkflowLogic().getCurrentState() 
-                        + "(" + w.getWorkflowLogic().getActiveState().name() + ")");
+                        + " (" + w.getWorkflowLogic().getActiveState().name() + ")");
                 /* I can not get the next state as I can not find a reference to the Transition from 
                  * which this method will be call
                  */

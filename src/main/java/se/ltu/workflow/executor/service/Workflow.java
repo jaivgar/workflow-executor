@@ -124,7 +124,7 @@ public class Workflow {
             
         // Set to status DONE the Workflow executed
         this.setWorkflowStatus(WStatus.DONE);
-        
+        logger.info("Workflow status set to " + WStatus.DONE);
         // Return the result? Or nothing?
         return false;
         

@@ -48,14 +48,18 @@ public class WExecutorService {
             
             try {
                 while(true) {
-                    /* Retrieve first element, deleting it from Queue, this method 
-                     * will block the thread whenever Queue is empty
+                    /* Retrieve first element, deleting it from Queue (which is not what we want!).
+                     * But this is the only retrieving method that will block the thread whenever Queue is empty
                      */
                     workflowOngoing = workflowsForExecution.take();
+                    // Put back the Workflow in the Queue, but the thread will not block this time
+                    workflowsForExecution.put(workflowOngoing);
+                    
                     logger.info("Consuming Workflow " + workflowOngoing.getWorkflowName() + " with ID=" + workflowOngoing.getId());
                     
                     // Set this Workflow as the active one
                     workflowOngoing.setWorkflowStatus(WStatus.ACTIVE);
+                    
                     
                     // This method will trigger the execution of the State Machine as the representation of the Workflow
                     workflowOngoing.startWorkflow();
@@ -67,6 +71,8 @@ public class WExecutorService {
                     if((int)workflowOngoing.getWorkflowLogic().getEnvironment().get("OutputStateMachine") == 200) {
                         logger.info("The Workflow ended succesfully");
                     }
+                    // Remove Workflow from Queue after its execution
+                    workflowsForExecution.take();
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -132,17 +138,20 @@ public class WExecutorService {
         
         // Create a new QueuedWorkflow with the configuration parameters and add to Queue
         requestedWorkflow.getWorkflowConfig().clear();
-        requestedWorkflow.getWorkflowConfig().putAll(workflowConfig);
+        // As workflowConfig is optional, it can be null
+        if (workflowConfig != null) {
+            requestedWorkflow.getWorkflowConfig().putAll(workflowConfig);
+        }
         QueuedWorkflow toExecuteWork = new QueuedWorkflow(requestedWorkflow);
         try {
             workflowsForExecution.add(toExecuteWork);
         } catch (IllegalStateException e) {
-            logger.error("The capacity of internal memory of Workflow Executor is full, to many Workflows waiting to be executed");
+            logger.error("The capacity of internal memory of Workflow Executor is full, too many Workflows waiting to be executed");
         }
         
         // A thread is forever running checking for Workflows in the Queue
         
-        // Return the created QueuedWorkflow (Or the one from the Queue?)
+        // Return the created QueuedWorkflow, the same reference as the one added to the Queue
         return toExecuteWork;
     }
     

@@ -18,6 +18,20 @@ public class QueuedWorkflowDTO {
     final ZonedDateTime endTime;
     
     /**
+     * Creates an empty object. 
+     * <p>
+     * To be used only as a reference to infer the class, not as a proper Object.
+     */
+    public QueuedWorkflowDTO() {
+        this.id = -1;
+        this.workflowName = null;
+        this.workflowStatus = null;
+        this.queueTime = null;
+        this.startTime = null;
+        this.endTime = null;
+    }
+    
+    /**
      * Creates a new {@code QueuedWorkflowDTO} and automatically sets its fields
      * from the underlining queued workflow.
      * 
