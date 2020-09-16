@@ -8,6 +8,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import se.ltu.workflow.executor.state_machine.StateMachine;
+import se.ltu.workflow.executor.state_machine.StateMachine.UpdateAction;
+import se.ltu.workflow.executor.state_machine.StateMachine.UpdateResult;
 
 public class Workflow {
     
@@ -114,13 +116,30 @@ public class Workflow {
         logger.debug("Environment contains variables: " + this.getWorkflowLogic().getEnvironment());
         
         // Execute all the transitions of the State Machine
-        while(this.getWorkflowLogic().update()) {
+        UpdateResult machineUpdate = this.getWorkflowLogic().update();
+        while(!machineUpdate.getUpdateAction().equals(UpdateAction.END)) {
+            
             // Log the progress through the states
             logger.info("Workflow " + this.getWorkflowName() + " in state "
                     + this.getWorkflowLogic().getCurrentState() + " (" 
-                    + this.getWorkflowLogic().getActiveState().name() + ")");
+                    + machineUpdate.getResultState().name() + ")");
             logger.debug("Events present: " + this.getWorkflowLogic().getEvents());
             logger.debug("Environment contains variables: " + this.getWorkflowLogic().getEnvironment());
+            
+            if(machineUpdate.getUpdateAction().equals(UpdateAction.NO_TRANSITION)) {
+                try {
+                    logger.info("Sleep for a second before checking again the Workflow");
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    logger.error("Method executing Workflows had an unexpected halt while sleeping");
+                    e.printStackTrace();
+                }
+            }
+            else {
+                logger.info("Transition executed: " + 
+                        this.getWorkflowLogic().getTransitions().indexOf(machineUpdate.getExecutedTransition()) );
+            }
+            machineUpdate = this.getWorkflowLogic().update();
         }
             
         // Set to status DONE the Workflow executed

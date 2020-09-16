@@ -184,19 +184,21 @@ public class StateMachine {
      * state, performing any actions if the transition is triggered and changing state if there is a
      * target in the active transition.
      * 
-     * @return True if the state is not an ending state and the State Machine can keep executing.<br>
-     * False if the state is an ending state(has no transitions), and the State Machine has reached a
-     * constant state of no change allowed. 
+     * @return An object which contains information about the changes made to the State Machine 
+     * status.<br>
+     * It has an enum value that represents how this method changed the State Machine, it has
+     * a reference to the transition executed (if no transition this will be null) during the method
+     * call, and also a reference to the state after the method finished updating the State Machine.
      */
-    public boolean update() {
+    public UpdateResult update() {
     	final State state = getActiveState();
     	
     	/* Check if this state is an END state, that would stop the State Machine.
          * Before adding and END state flag to the state object, we can just check if the state has
          * an empty list of transitions.
          */
-    	if (state.transitionsIndexes() == null) {
-    		return false;
+    	if (state.transitionsIndexes() == null || state.transitionsIndexes().isEmpty()) {
+    		return new UpdateResult(getActiveState(), null, UpdateAction.END);
     	}
     	
     	// Go through the transitions of the current state and check if they are triggered.
@@ -257,7 +259,7 @@ public class StateMachine {
              * If so, remove break, remove event clear before actions and
              * throw exception for nondeterministic behavior?
              */
-            return true; 
+            return new UpdateResult(getActiveState(), transition, UpdateAction.TRANSITION); 
         }
         
         /* The events are removed after they have been checked against all the transitions.
@@ -269,7 +271,98 @@ public class StateMachine {
          */
         //events.clear();
         
-        return false;
+        return new UpdateResult(getActiveState(), null, UpdateAction.NO_TRANSITION);
+        
+    }
+    
+    /**
+     * This enumeration represents the 3 possible actions that the update method can do
+     * upon a State Machine:
+     * <p><ul>
+     * <li>NO_TRANSITION: The update method goes through all the transitions of the state
+     * but none is activated because their conditions are not met
+     * <li>TRANSITION: The update method executes a transition, triggering some actions and
+     * changing the state as stated by the transition (A transition can have no action and
+     * go back to the same state that it started in)
+     * <li>END: The update method acknowledge that this State has no transitions, so is a dead end
+     * for the State Machine
+     * </ul><p>
+     *
+     */
+    public enum UpdateAction {
+        NO_TRANSITION,TRANSITION,END
+    }
+    
+    /**
+     * Class that wraps the different values that someone executing a State Machine will be
+     * interested to know, after each update() call
+     *
+     */
+    public class UpdateResult {
+        
+        private final State resultState;
+        private final Transition executedTransition;
+        private final UpdateAction updateAction;
+        
+        public UpdateResult(State resultState, Transition executedTransition, UpdateAction updateAction) {
+            this.resultState = resultState;
+            this.executedTransition = executedTransition;
+            this.updateAction = updateAction;
+        }
+        
+        public State getResultState() {
+            return resultState;
+        }
+
+        public Transition getExecutedTransition() {
+            return executedTransition;
+        }
+
+        public UpdateAction getUpdateAction() {
+            return updateAction;
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + getEnclosingInstance().hashCode();
+            result = prime * result + ((executedTransition == null) ? 0 : executedTransition.hashCode());
+            result = prime * result + ((resultState == null) ? 0 : resultState.hashCode());
+            result = prime * result + ((updateAction == null) ? 0 : updateAction.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            UpdateResult other = (UpdateResult) obj;
+            if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
+                return false;
+            if (executedTransition == null) {
+                if (other.executedTransition != null)
+                    return false;
+            } else if (!executedTransition.equals(other.executedTransition))
+                return false;
+            if (resultState == null) {
+                if (other.resultState != null)
+                    return false;
+            } else if (!resultState.equals(other.resultState))
+                return false;
+            if (updateAction != other.updateAction)
+                return false;
+            return true;
+        }
+
+        private StateMachine getEnclosingInstance() {
+            return StateMachine.this;
+        }
+        
         
     }
 
@@ -317,4 +410,5 @@ public class StateMachine {
     		}
     	}
 	}
+    
 }
