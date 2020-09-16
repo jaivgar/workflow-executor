@@ -2,7 +2,6 @@ package se.ltu.workflow.executor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +28,6 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 
 import se.ltu.workflow.executor.dto.WorkflowDTO;
 import se.ltu.workflow.executor.dto.QueuedWorkflowDTO;
-import se.ltu.workflow.executor.service.QueuedWorkflow;
 import se.ltu.workflow.executor.service.Workflow;
 import se.ltu.workflow.executor.state_machine.Event;
 import se.ltu.workflow.executor.state_machine.Guard;
@@ -196,7 +194,6 @@ public class InitialWorkflows {
                         (env, events) -> {
                             printEvents(events, "start of Transition 1");
                             printEnvironment(env, "start of Transition 1");
-//                            printCurrentState(workflowTestName);
                             
                             // Test service
                             System.out.println("Transition 1: Test Service available Workflow types");
@@ -253,7 +250,6 @@ public class InitialWorkflows {
                         (env, events) -> {
                             printEvents(events, "start of Transition 2");
                             printEnvironment(env, "start of Transition 2");
-//                            printCurrentState(workflowTestName);
                             
                             // Test service
                             System.out.println("Transition 2: Test Service Workflows in-execution");
@@ -307,7 +303,6 @@ public class InitialWorkflows {
                         (env, events) -> {
                             printEvents(events, "start of Transition 3");
                             printEnvironment(env, "start of Transition 3");
-//                            printCurrentState(workflowTestName);
                             
                             // Test service
                             System.out.println("Transition 3: Test Service execute workflow");
@@ -362,7 +357,6 @@ public class InitialWorkflows {
                         (env, events) -> {
                             printEvents(events, "start of Transition 4");
                             printEnvironment(env, "start of Transition 4");
-//                            printCurrentState(workflowTestName);
                             
                             System.out.println("Transition 4: End State Machine and output its results");
                             if (env.containsKey("Error")) {
@@ -428,26 +422,21 @@ public class InitialWorkflows {
         }
     }
     
-    // TODO: Implement method by injecting the WExecutorService and retrieving the list with active Workflows
+    /**
+     * Not implemented yet.
+     * 
+     */
+    // TODO: Find other ways to extract the current state of the QueuedWorkflow
     private void printCurrentState(String workflowName) {
-        // Need to access the Queue where the active workflows are stored
-        for(Workflow w : this.getWorkflows()) {
-            if(w.getWorkflowName().equals(workflowName)) {
-                System.out.println("State Machine in state " + w.getWorkflowLogic().getCurrentState() 
-                        + " (" + w.getWorkflowLogic().getActiveState().name() + ")");
-                /* I can not get the next state as I can not find a reference to the Transition from 
-                 * which this method will be call
-                 */
-                //System.out.println("Changing to state " + w.getWorkflowLogic()... targetState());
-                return;
-            }
-        }
-        throw new IllegalArgumentException("Workflow name \""+ workflowName + "\" does not correspond to any Workflow stored in this system");
+        /* To implement this method correctly I will need to inject the WExecutorService and 
+         * retrieve the list with active Workflows. But then this State Machine could alter the 
+         * WorkflowExecutor state and other Workflows stored in it, and it should not be authorized.
+         */
     }
     
     /**
      * Retrieves and prints the state number and (name) in which the State Machine was at the
-     * start of the transition. Not works as intended, always prints the same.
+     * start of the transition. Not working as intended, always prints the same value.
      * <p>
      * If the workflowName is not the one corresponding to the Workflow from which the transition
      * that calls this method is executed, the output will not make sense. It will probably be

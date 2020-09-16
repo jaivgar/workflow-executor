@@ -40,6 +40,11 @@ public class WExecutorController {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+    /**
+     * Method to test Workflow Executor system availability
+     * 
+     * @return  a "Got it!" message with the purpose of testing the system availability.
+     */
 	@GetMapping(path = CommonConstants.ECHO_URI)
 	public String echoService() {
 	    logger.info("Receiving echo request");

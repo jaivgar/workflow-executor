@@ -12,14 +12,15 @@ import se.ltu.workflow.executor.state_machine.StateMachine;
 public class Workflow {
     
     final private String workflowName;
-    /*TODO: The workflowStatus was before in the child class QueuedWorkflow, 
-     * still unsure of where to set it
-     */
     private WStatus workflowStatus;
     final private Map<String,List<String>> workflowConfig;
     final private StateMachine workflowLogic;
     
-    //TODO: Add variable to store Workflow results? Not needed if workflowConfig is a mutable Map
+    /* Add variable to store Workflow results?
+     * Not needed if we can use workflowConfig, if it is a mutable Map.
+     * However what class should be used to store Workflow results? It depends on 
+     * the Workflow so unless using generics, the user will have to cast later.
+     */
     
     private final Logger logger = LogManager.getLogger(Workflow.class);
     

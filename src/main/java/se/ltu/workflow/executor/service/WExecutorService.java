@@ -53,6 +53,9 @@ public class WExecutorService {
                      */
                     workflowOngoing = workflowsForExecution.take();
                     // Put back the Workflow in the Queue, but the thread will not block this time
+                    /* TODO: Should synchronize the access to this variable, race conditions can occur if the 
+                     * getWorklfowExecuting method is called between the take and the put.
+                     */
                     workflowsForExecution.put(workflowOngoing);
                     
                     logger.info("Consuming Workflow " + workflowOngoing.getWorkflowName() + " with ID=" + workflowOngoing.getId());

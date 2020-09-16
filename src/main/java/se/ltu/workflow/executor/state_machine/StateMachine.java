@@ -207,7 +207,7 @@ public class StateMachine {
              * At the moment, we keep that both are needed, but in the future guards could be optional
              */
             
-            //TODO: Here is where we decided if we accept transitions without Events
+            // Do we accept transitions without Events?
             /* Now, the behavior is to accept transitions that have no Events, and
              * continue evaluating the  transition, its guards, as if the Events
              * were true 
@@ -225,7 +225,7 @@ public class StateMachine {
 				}
             }
             
-            //TODO: Here is where we decided if we accept transitions without Guards
+            // Do we accept transitions without Guards?
             /* Now, the behavior is to accept transitions that have no Guards, and
              * activate the transition, triggering its action, as if the Guards
              * were true
