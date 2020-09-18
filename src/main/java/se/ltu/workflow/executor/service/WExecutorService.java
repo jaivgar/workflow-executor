@@ -70,10 +70,14 @@ public class WExecutorService {
                     logger.info("The Workflow started at: " + workflowOngoing.getStartTime());
                     logger.info("The Workflow finished at: " + workflowOngoing.getEndTime());
                     
-                    // This is one way to obtain results from a State Machine, in this case we use similar HTTP codes
-                    if((int)workflowOngoing.getWorkflowLogic().getEnvironment().get("OutputStateMachine") == 200) {
-                        logger.info("The Workflow ended succesfully");
-                    }
+                    /* The WorkflowExecutor should not look inside the State Machine, that logic should be part
+                     * of the State Machine itself, looking for errors or success in his last transition
+                     */
+                    // This is one way to obtain results from a State Machine, in this State Machine we use similar HTTP codes
+//                    if((int)workflowOngoing.getWorkflowLogic().getEnvironment().get("OutputStateMachine") == 200) {
+//                        logger.info("The Workflow ended succesfully");
+//                    }
+                    
                     // Remove Workflow from Queue after its execution
                     workflowsForExecution.take();
                 }

@@ -125,9 +125,24 @@ public class StateMachine {
      * 
      * @param currentState The number of the state, as ordered in the State List, that should
      * be used to start the State Machine from.
+     * 
+     * @throws IllegalArgumentException if the state number introduced does not correspond to 
+     * a state of this StateMachine, because is out of range.
      */
     public void setCurrentState(int currentState) {
-        this.currentState = currentState;
+
+        // This should be checked in the constructor
+//        if(states.isEmpty()) {
+//            throw new IllegalStateException("StateMachine does not contain any state");
+//        }
+        
+        if(currentState > states.size()-1) {
+            throw new IllegalArgumentException("State number out of range, "
+                    + "StateMachine only has index until " + (states.size()-1));
+        }
+        else {
+            this.currentState = currentState;
+        }
     }
 
     /**
@@ -386,8 +401,17 @@ public class StateMachine {
      * @throws IllegalArgumentException if any of the arguments does not follow
      * the rules to create a correct State Machine
      */
-    private void checkStateMachine(List<State> statesUnderTest, List<Transition> transitionsUnderTest ) throws IllegalArgumentException {
+    private void checkStateMachine(List<State> statesUnderTest, List<Transition> transitionsUnderTest ) 
+            throws IllegalArgumentException {
     	
+        // Check that there are at least one State and one Transition
+        if(statesUnderTest.isEmpty()) {
+            throw new IllegalArgumentException("StateMachine can not be created without a state");
+        }
+        if(transitionsUnderTest.isEmpty()) {
+            throw new IllegalArgumentException("StateMachine can not be created without a transition");
+        }
+        
     	for (final State s: statesUnderTest) {
     		// Check that states do not point to Transitions that do not exist
     		for(int i: s.transitionsIndexes()) {
