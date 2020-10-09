@@ -10,18 +10,18 @@
 
   	<groupId>se.ltu.workflow</groupId>
   	<artifactId>workflow-executor</artifactId>
-  	<version>1.0-SNAPSHOT</version>
-  	<packaging>jar</packaging>
-  	<name>workflow-executor</name>
+  	<version>0.1.0</version>
   	
+  	<name>workflow-executor</name>
   	<description>Workflow Executor Arrowhead system</description>
-
   	<url>https://github.com/jaivgar/workflow-executor</url>
-
+  	
+  	<packaging>jar</packaging>
+  	
   	<licenses>
     	<license>
-      		<name>Apache License, Version 2.0</name>
-      		<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      		<name>Eclipse Public License 2.0</name>
+      		<url>https://www.eclipse.org/legal/epl-2.0/</url>
     	</license>
   	</licenses>
 
