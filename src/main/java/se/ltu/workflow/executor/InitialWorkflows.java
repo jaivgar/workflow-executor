@@ -77,6 +77,11 @@ public class InitialWorkflows {
         workflowsInput = new HashSet<>();
         
         workflowsInput.add(testWorkflow());
+        
+        FischertechnikWorkflow factoryWorkflows = new FischertechnikWorkflow();
+        workflowsInput.add(factoryWorkflows.milling());
+        workflowsInput.add(factoryWorkflows.drilling());
+        workflowsInput.add(factoryWorkflows.millingAndDrilling());
     }
     
     public Set<Workflow> getWorkflows() {
