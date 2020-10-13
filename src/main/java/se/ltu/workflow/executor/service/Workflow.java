@@ -7,6 +7,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import se.ltu.workflow.executor.WExecutorConstants;
 import se.ltu.workflow.executor.state_machine.StateMachine;
 import se.ltu.workflow.executor.state_machine.StateMachine.UpdateAction;
 import se.ltu.workflow.executor.state_machine.StateMachine.UpdateResult;
@@ -128,8 +129,8 @@ public class Workflow {
             
             if(machineUpdate.getUpdateAction().equals(UpdateAction.NO_TRANSITION)) {
                 try {
-                    logger.info("Sleep for a second before checking again the Workflow");
-                    Thread.sleep(1000);
+                    logger.info("Sleep for " + WExecutorConstants.TIME_TO_RETRY_WORKFLOW_MILIS + " ms before checking again the Workflow");
+                    Thread.sleep(WExecutorConstants.TIME_TO_RETRY_WORKFLOW_MILIS);
                 } catch (InterruptedException e) {
                     logger.error("Method executing Workflows had an unexpected halt while sleeping");
                     e.printStackTrace();

@@ -28,7 +28,7 @@ public class WExecutorConstants {
     public static final String REQUEST_OBJECT_KEY_WORKFLOW = "request-object";
     public static final String REQUEST_OBJECT_WORKFLOW = "workflow";
     
-    
+    public static final int TIME_TO_RETRY_WORKFLOW_MILIS = 10;
 
     
     
