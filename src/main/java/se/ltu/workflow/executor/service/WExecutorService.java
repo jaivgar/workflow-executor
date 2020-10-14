@@ -65,7 +65,7 @@ public class WExecutorService {
                     
                     
                     // This method will trigger the execution of the State Machine as the representation of the Workflow
-                    workflowOngoing.startWorkflow();
+                    workflowOngoing.executeWorkflow();
                     logger.info("The Workflow entered queue at: " + workflowOngoing.getQueueTime());
                     logger.info("The Workflow started at: " + workflowOngoing.getStartTime());
                     logger.info("The Workflow finished at: " + workflowOngoing.getEndTime());

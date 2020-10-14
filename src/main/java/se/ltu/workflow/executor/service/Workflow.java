@@ -3,11 +3,13 @@ package se.ltu.workflow.executor.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import se.ltu.workflow.executor.WExecutorConstants;
+import se.ltu.workflow.executor.state_machine.Event;
 import se.ltu.workflow.executor.state_machine.StateMachine;
 import se.ltu.workflow.executor.state_machine.StateMachine.UpdateAction;
 import se.ltu.workflow.executor.state_machine.StateMachine.UpdateResult;
@@ -18,6 +20,26 @@ public class Workflow {
     private WStatus workflowStatus;
     final private Map<String,List<String>> workflowConfig;
     final private StateMachine workflowLogic;
+
+    /**
+     * Boolean flag that represents that the current Workflow ended successfully
+     */
+    private Boolean success;
+    
+    /**
+     * Optional that contains the error message, if any
+     */
+    private Optional<String>  errorMessage;
+    
+    /**
+     * Name of the event inside the State Machines that represents a successful execution
+     */
+    final static String WORKFLOW_END_SUCCESS = "END-OK";
+    
+    /**
+     * Name of the environment variable inside the State Machines that represents an error message
+     */
+    final static String WORKFLOW_ERROR_MSG = "Error";
     
     /* Add variable to store Workflow results?
      * Not needed if we can use workflowConfig, if it is a mutable Map.
@@ -88,6 +110,22 @@ public class Workflow {
         return workflowLogic;
     }
 
+    public Boolean getSuccess() {
+        return success;
+    }
+
+    public void setSuccess(Boolean success) {
+        this.success = success;
+    }
+
+    public Optional<String> getPossibleErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(Optional<String> errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
     /**
      * This method encapsulates the logic to execute a Workflow. 
      * <p>
@@ -101,7 +139,7 @@ public class Workflow {
      * @return The same as in {@link se.ltu.workflow.executor.state_machine.StateMachine#update()}. 
      * True when the workflow can keep executing, false otherwise.
      */
-    public Boolean startWorkflow() {
+    public Boolean executeWorkflow() {
         if (this.getWorkflowStatus() != WStatus.ACTIVE) {
             throw new IllegalStateException("Workflow is not ACTIVE yet, so it should not be executed");
         }
@@ -158,7 +196,7 @@ public class Workflow {
      * This method has a pre-condition: the Workflow from which it is called must be in DONE state,
      * otherwise it will throw an {@code IllegalStateException}.
      * <p>
-     * Implementation status: At the moment the outputs are not stored anywhere.
+     * Implementation status: At the moment the outputs are not stored anywhere. 
      * 
      * @return True when the Workflow ends successfully, which now is always the case
      */
@@ -166,9 +204,28 @@ public class Workflow {
         if (this.getWorkflowStatus() != WStatus.DONE) {
             throw new IllegalStateException("Workflow is not DONE yet, so it should not be ended");
         }
+        
         //cleanWorkflow();
-        logger.info("Workflow " + this.getWorkflowName() + " is finished");
-        return true;
+        if (this.getWorkflowLogic().getEvents().contains(new Event(WORKFLOW_END_SUCCESS))) {
+            this.setSuccess(true);
+            logger.info("Workflow " + this.getWorkflowName() + " finished successfully");
+        }
+        else{
+            this.failWorkflow();
+            logger.info("Workflow " + this.getWorkflowName() + " finished with error");
+        }
+        return this.getSuccess();
+    }
+    
+    private void failWorkflow() {
+        this.setSuccess(false);
+        try {
+            this.setErrorMessage(Optional.of(
+                    (String)(this.getWorkflowLogic().getEnvironment().get(WORKFLOW_ERROR_MSG))));
+        }catch (NullPointerException e) {
+            this.setErrorMessage(Optional.of("Workflow did not specify error message"));
+        }
+        
     }
     
     
