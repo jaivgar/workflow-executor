@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +26,7 @@ import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import se.ltu.workflow.executor.service.Workflow;
 import se.ltu.workflow.executor.state_machine.Event;
+import se.ltu.workflow.executor.state_machine.LogicExpression;
 import se.ltu.workflow.executor.state_machine.State;
 import se.ltu.workflow.executor.state_machine.StateMachine;
 import se.ltu.workflow.executor.state_machine.Transition;
@@ -56,6 +58,10 @@ public class FischertechnikWorkflow {
      */
     private static List<String> servicesFactory = List.of("sensorvalue", "actuatorvalue");
     
+    private static final String INIT_OK = "Init-Success";
+    private static final String SERVICE_OK = "Services found";
+    
+    
     private final Logger logger = LogManager.getLogger(FischertechnikWorkflow.class);
     
     public Workflow milling() {
@@ -67,7 +73,7 @@ public class FischertechnikWorkflow {
         
         StateMachine workflowMachine = new StateMachine(
                 Arrays.asList(
-                        new State("Find factory services", 0),
+                        new State("Find factory services and input config", 0,17),
                         new State("Detect product", 1),
                         new State("Start input conveyor", 2),
                         new State("Stop input conveyor with delay", 3),
@@ -93,19 +99,22 @@ public class FischertechnikWorkflow {
                         (env, events) -> {
                             System.out.println("Transition 0: Look at State Machine input configuration"
                                     + " and services");
-                            Map<String,OrchestrationResultDTO> serviceAndAddress = new HashMap<>();
-                            try {
-                                for(String serviceDefinition : servicesFactory) {
-                                    serviceAndAddress.put(serviceDefinition, orchestrate(serviceDefinition));
-                                }
-                                env.put("ServicesAddress", serviceAndAddress);
-                                events.add(new Event("Services found"));
-                            } catch (ArrowheadException e) {
-                                events.add(new Event("Error Init"));
+                            findServices(env,events);
+                            if(!env.containsKey("numberOfMilling")) {
+                                env.put("numberOfMilling", 1);
                             }
-
+                            if(!env.containsKey("timeOfMillingInMilis")) {
+                                env.put("timeOfMillingInMilis", 1000);
+                            }
                         },
-                        1)
+                        1),
+                    new Transition(
+                            new LogicExpression<Event,Set<Event>>(null, List.of(new Event(SERVICE_OK))),
+                            null, 
+                            (env, events) -> {
+                                
+                            }, 
+                            2)
                 )
                 );
         
@@ -147,7 +156,22 @@ public class FischertechnikWorkflow {
         
     }
     
-  //-------------------------------------------------------------------------------------------------
+    
+    private void findServices(Map<String, Object> env, Set<Event> events) {
+        Map<String,OrchestrationResultDTO> serviceAndAddress = new HashMap<>();
+        try {
+            for(String serviceDefinition : servicesFactory) {
+                serviceAndAddress.put(serviceDefinition, orchestrate(serviceDefinition));
+            }
+            env.put("ServicesAddress", serviceAndAddress);
+            events.add(new Event("Services found"));
+        } catch (ArrowheadException e) {
+            events.add(new Event("Error Init"));
+        }
+    }
+    
+    // General methods to consumer Arrowhead services
+    //-------------------------------------------------------------------------------------------------
     private OrchestrationResultDTO orchestrate(final String serviceDefinition) throws ArrowheadException{
         final ServiceQueryFormDTO serviceQueryForm = new ServiceQueryFormDTO.Builder(serviceDefinition)
                 .interfaces(getInterface())
