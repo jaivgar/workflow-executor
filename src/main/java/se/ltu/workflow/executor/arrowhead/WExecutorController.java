@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 import eu.arrowhead.common.CommonConstants;
 
 import se.ltu.workflow.executor.WExecutorConstants;
+import se.ltu.workflow.executor.dto.FinishWorkflowDTO;
 import se.ltu.workflow.executor.dto.QueuedWorkflowDTO;
+import se.ltu.workflow.executor.dto.StartWorkflowDTO;
 import se.ltu.workflow.executor.dto.WorkflowDTO;
 import se.ltu.workflow.executor.service.QueuedWorkflow;
 import se.ltu.workflow.executor.service.WExecutorService;
@@ -82,11 +84,11 @@ public class WExecutorController {
 	//-------------------------------------------------------------------------------------------------
     @PostMapping(path = WExecutorConstants.EXECUTE_WORKFLOW_URI, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     // It only allows one HTTP status(if there are no exceptions) @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
-    public ResponseEntity<QueuedWorkflowDTO> executeWorkflow(@RequestBody final WorkflowDTO workflowWanted){
+    public ResponseEntity<StartWorkflowDTO> executeWorkflow(@RequestBody final WorkflowDTO workflowWanted){
         logger.info("Receiving request for service: " + WExecutorConstants.EXECUTE_WORKFLOW_SERVICE_DEFINITION);
-        QueuedWorkflowDTO resultBody;
+        StartWorkflowDTO resultBody;
         try {
-            resultBody = QueuedWorkflowDTO.fromQueuedWorkflow(
+            resultBody = StartWorkflowDTO.fromQueuedWorkflow(
                     executorService.executeWorkflow(workflowWanted.getWorkflowName(), 
                                                     workflowWanted.getWorkflowConfig()));
         }

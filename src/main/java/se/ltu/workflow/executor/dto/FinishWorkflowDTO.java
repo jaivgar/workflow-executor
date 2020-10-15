@@ -49,14 +49,18 @@ public class FinishWorkflowDTO {
         if(finishedWorkflow == null) {
             throw new IllegalArgumentException("Input argument \"QueuedWorkflow\" can not be null");
         }
-        return new FinishWorkflowDTO(finishedWorkflow.getId(), 
-                finishedWorkflow.getWorkflowName(),
-                finishedWorkflow.getWorkflowStatus(),
-                finishedWorkflow.getSuccess(),
-                finishedWorkflow.getPossibleErrorMessage().orElse(""),
-                finishedWorkflow.getQueueTime(),
-                finishedWorkflow.getStartTime(),
-                finishedWorkflow.getEndTime());
+        
+        if (finishedWorkflow.getWorkflowStatus().equals(WStatus.DONE))
+            new FinishWorkflowDTO(finishedWorkflow.getId(), 
+                                    finishedWorkflow.getWorkflowName(),
+                                    finishedWorkflow.getWorkflowStatus(),
+                                    finishedWorkflow.getSuccess(),
+                                    finishedWorkflow.getPossibleErrorMessage().orElse(""),
+                                    finishedWorkflow.getQueueTime(),
+                                    finishedWorkflow.getStartTime(),
+                                    finishedWorkflow.getEndTime());
+        
+        throw new IllegalArgumentException("Workflow is not finished yet to create this DTO from it");
     }
 
     public int getId() {

@@ -38,10 +38,12 @@ public class StartWorkflowDTO {
         if(queuedWorkflow == null) {
             throw new IllegalArgumentException("Input argument \"QueuedWorkflow\" can not be null");
         }
-        return new StartWorkflowDTO(queuedWorkflow.getId(), 
+        if (!queuedWorkflow.getWorkflowStatus().equals(WStatus.DONE))
+            return new StartWorkflowDTO(queuedWorkflow.getId(), 
                                      queuedWorkflow.getWorkflowName(),
                                      queuedWorkflow.getWorkflowStatus(),
                                      queuedWorkflow.getQueueTime());
+        throw new IllegalArgumentException("Workflow is finished, so create a finish DTO from it, not a start");
     }
 
     public int getId() {

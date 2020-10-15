@@ -27,6 +27,7 @@ import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InvalidParameterException;
 
 import se.ltu.workflow.executor.dto.WorkflowDTO;
+import se.ltu.workflow.executor.demo.FischertechnikWorkflow;
 import se.ltu.workflow.executor.dto.QueuedWorkflowDTO;
 import se.ltu.workflow.executor.service.Workflow;
 import se.ltu.workflow.executor.state_machine.Event;
@@ -78,10 +79,10 @@ public class InitialWorkflows {
         
         workflowsInput.add(testWorkflow());
         
-        FischertechnikWorkflow factoryWorkflows = new FischertechnikWorkflow();
-        workflowsInput.add(factoryWorkflows.milling());
-        workflowsInput.add(factoryWorkflows.drilling());
-        workflowsInput.add(factoryWorkflows.millingAndDrilling());
+//        FischertechnikWorkflow factoryWorkflows = new FischertechnikWorkflow();
+//        workflowsInput.add(factoryWorkflows.milling());
+//        workflowsInput.add(factoryWorkflows.drilling());
+//        workflowsInput.add(factoryWorkflows.millingAndDrilling());
     }
     
     public Set<Workflow> getWorkflows() {

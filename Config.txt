@@ -1,0 +1,20 @@
+How to start the Workflow Executor:
+
+1. First you need an Arrowhead Local Cloud, go to https://github.com/arrowhead-f/core-java-spring and clone the repository. In the folder where you downloaded the repo, run "mvn install -DskipTests".
+
+2. Inside "scripts" folder, run "create_arrowhead_tables.sql" in your MySQL database. I use MySQL Workbench, so I choose "File" -> "Run SQL Script".
+
+2. For the Workflow Executor only the Service Registry, Authorization and Orchestrator are needed. Configure the systems according to your needs, going into their "target" folder and modifying their "application.properties" file with IP address and port. Also put the database credentials for the core systems to log into the database.
+
+3. Now you can execute those 3 Core Systems, starting with the Service Registry, then Authorization and finally Orchestrator. If you want you can wait to execute them until later, but before starting the Workflow Executor.
+
+4. Now we need the Workflow Executor, clone this repo and run "mvn verify -DskipTests".
+
+5. Again configure the system, by going to the "target" folder and modifying the "application.properties" file with IP address and port. No need for database access in this system.
+
+6. Now, when all 3 core systems are running (Service Registry, Authorization and Orchestration) you can execute the Workflow Executor.
+
+7. To test it, it does not have a Swagger interface (yet), but will answer to a GET request at https://127.0.0.1:8501/workflow-executor/echo.
+
+8. Before executing the test State Machine, remember to give in the Local Cloud the Authorization rules, for it to consume its own services.
+
