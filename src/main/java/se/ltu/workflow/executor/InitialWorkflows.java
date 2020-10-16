@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +70,9 @@ public class InitialWorkflows {
     @Autowired
     protected SSLProperties sslProperties;
     
+    @Autowired
+    private FischertechnikWorkflow factoryWorkflows;
+    
     private final Logger logger = LogManager.getLogger(InitialWorkflows.class);
     
     /**
@@ -79,10 +84,14 @@ public class InitialWorkflows {
         
         workflowsInput.add(testWorkflow());
         
-//        FischertechnikWorkflow factoryWorkflows = new FischertechnikWorkflow();
-//        workflowsInput.add(factoryWorkflows.milling());
-//        workflowsInput.add(factoryWorkflows.drilling());
-//        workflowsInput.add(factoryWorkflows.millingAndDrilling());
+
+    }
+    
+    @PostConstruct
+    private void initConfig() {
+        workflowsInput.add(factoryWorkflows.milling());
+//      workflowsInput.add(factoryWorkflows.drilling());
+//      workflowsInput.add(factoryWorkflows.millingAndDrilling());
     }
     
     public Set<Workflow> getWorkflows() {
