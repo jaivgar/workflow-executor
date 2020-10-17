@@ -28,9 +28,10 @@ public class WExecutorConstants {
     public static final String REQUEST_OBJECT_KEY_WORKFLOW = "request-object";
     public static final String REQUEST_OBJECT_WORKFLOW = "workflow";
     
-    public static final int TIME_TO_RETRY_WORKFLOW_MILIS = 10;
+    public static final int TIME_TO_RETRY_WORKFLOW_MILIS = 2;
 
-    
+    // Workflow Manager constants
+    public static final String WMANAGER_RESULT_SERVICE_DEFINITION = "wmanager-operation-results";
     
     /**
      * Do not create an instance of a class used to hold constants

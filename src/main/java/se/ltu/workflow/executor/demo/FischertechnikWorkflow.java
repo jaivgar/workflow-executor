@@ -74,19 +74,27 @@ public class FischertechnikWorkflow {
     private static final Event PRODUCT_END_SLIDER_EV = new Event("Product at the end of slider motor");
     private static final Event PRODUCT_IN_MILLING_EV = new Event("Product arrived at milling");
     private static final Event PRODUCT_READY_MILLING_EV = new Event("Product ready for being milled");
-    private static final Event PRODUCT_END_MILLING_EV = new Event("Product end milling operation");
+    private static final Event PRODUCT_END_MILLING_EV = new Event("Product ended milling operation");
+    private static final Event PRODUCT_DONE_EV = new Event("Product ended manufacturing");
     
     private static final Event MOTOR_SLIDER_ORIGIN_EV = new Event("Motor slider at starting position");
     
     private static final Event WORK_ONGOING_EV = new Event("Ongoing work");
     private static final Event WORK_DONE_EV = new Event("Work done");
+    private static final Event WORK_ERROR_EV = new Event("Work error");
     
     private static final String PRODUCT_READY_MILLING = "Milling ready";
+    private static final String PRODUCT_DONE_MILLING = "Milling done";
     private static final String PRODUCT_READY_DRILLING = "Drilling ready";
+    private static final String PRODUCT_DONE_DRILLING = "Drilling done";
+    private static final String PRODUCT_AT_OUTPUT = "Product at output location";
+    
     private static final String SLIDER_1_ORIGIN = "Slider 1 at starting position";
     private static final String SLIDER_2_ORIGIN = "Slider 2 at starting position";
     
     private static final String STATE_MACHINE_RESULT = "State Machine result";
+    private static final String SUCCESS = "success";
+    private static final String ERROR = "error";
     private static final String ERROR_MESSAGE = "Error message";
     
     private static final String NMILLING = "numberOfMilling";
@@ -107,30 +115,22 @@ public class FischertechnikWorkflow {
                     new State("Find factory services and input config", 0),
                     new State("Detect product", 1,7),
                     new State("Product going through input conveyor", 1,2),
-                    new State("Product pushed by slider motor", 2,3),
+                    new State("Product pushed by slider motor 1", 2,3),
                     new State("Product going through milling conveyor", 3,4,5,6),
-                    new State("Product at milling station"),
-                    
-//                    new State("Stop slider motor 1", 6,7),
-//                    new State("Stop milling conveyor", 5,7),
-//                    new State("Start milling", 8),
-//                    new State("Stop milling and start milling conveyor", 9),
-//                    new State("Stop milling conveyor and start drilling conveyor", 10),
-//                    new State("Stop drilling conveyor with delay", 11),
-//                    new State("Start slider motor 2", 12),
-//                    new State("Stop and back slider motor 2 & start output conveyor", 13,14),
-//                    new State("Stop slider motor 2", 14,15),
-//                    new State("Stop output conveyor", 13,15),
-//                    new State("Send workflow results", 16),
-                    
-                    new State("End workflow")
+                    new State("Product at milling station", 7), // State 5
+                    new State("Product leave milling and drilling stations", 8),
+                    new State("Product pushed by slider motor 2", 8,9),
+                    new State("Product going through output conveyor", 9,10),
+                    new State("Product finished, send results",10,11),
+                    new State("End workflow succesfully"), // State 10
+                    new State("End workflow with errors")
                     ),
             Arrays.asList(
                 new Transition( // Transition 0
-                    null, 
-                    null, 
+                    null,
+                    null,
                     (env, events) -> {
-                        System.out.println("Transition 0: Examine State Machine input configuration"
+                        logger.info("Transition 0: Examine State Machine input configuration"
                                 + " and services");
                         events.add(findServices(env,events) ? SERVICES_OK_EV : INIT_FAIL_EV);
                         if(events.contains(INIT_FAIL_EV)) {
@@ -167,38 +167,40 @@ public class FischertechnikWorkflow {
                         }
                         env.put(PRODUCT_READY_MILLING, Boolean.FALSE);
 //                        env.put(PRODUCT_READY_DRILLING, Boolean.FALSE);
+                        env.put(PRODUCT_DONE_MILLING, Boolean.FALSE);
+                        env.put(PRODUCT_AT_OUTPUT, Boolean.FALSE);
                         
                     },
                     1),
                 new Transition( // Transition 1
                     new LogicExpression<Event,Set<Event>>(
-                            LogicOperator.OR, 
+                            LogicOperator.OR,
                             List.of(SERVICES_OK_EV,
                                     WAITING_PRODUCT_EV)),
-                    null, 
+                    null,
                     (env, events) -> {
-                        System.out.println("Transition 1: Wait for product to arrive and start conveyor");
+                        logger.info("Transition 1: Wait for product to arrive and start conveyor");
                         if (!getSensor(env, 7)) {
-                            logger.info("Product detected, starting conveyor belt");
+                            logger.debug("Product detected, starting conveyor belt");
                             events.add(PRODUCT_READY_EV);
                             setActuator(env, 5, true);
                         }
                         else {
                             events.add(WAITING_PRODUCT_EV);
                         }
-                    }, 
+                    },
                     2),
                 new Transition( // Transition 2
                     new LogicExpression<Event,Set<Event>>(
-                            LogicOperator.OR, 
+                            LogicOperator.OR,
                             List.of(PRODUCT_READY_EV,
                                     PRODUCT_IN_CONVEYOR_EV)),
-                    null, 
+                    null,
                     (env, events) -> {
-                        System.out.println("Transition 2: Wait for product to leave feed conveyor "
+                        logger.info("Transition 2: Wait for product to leave feed conveyor "
                                 + "and stop it");
                         if (!getSensor(env, 5)) {
-                            logger.info("Product detected at end of conveyor belt, "
+                            logger.debug("Product detected at end of conveyor belt, "
                                     + "wait a second before stopping the conveyor");
                             try {
                                 Thread.sleep(1000);
@@ -216,18 +218,18 @@ public class FischertechnikWorkflow {
                         else {
                             events.add(PRODUCT_IN_CONVEYOR_EV);
                         }
-                    }, 
+                    },
                     3),
                 new Transition( // Transition 3
                     new LogicExpression<Event,Set<Event>>(
-                            LogicOperator.OR, 
+                            LogicOperator.OR,
                             List.of(PRODUCT_END_CONVEYOR_EV,
                                     PRODUCT_IN_SLIDER_EV)),
-                    null, 
+                    null,
                     (env, events) -> {
-                        System.out.println("Transition 3: Wait for product to leave slider motor 1");
+                        logger.info("Transition 3: Wait for product to leave slider motor 1");
                         if (getSensor(env, 1)) {
-                            logger.info("Product detected at end of slider motor, star milling conveyor"
+                            logger.debug("Product detected at end of slider motor, star milling conveyor"
                                     + "and push slider backwards");
                             // Stop forward movement of slider motor 1
                             setActuator(env, 1, false);
@@ -240,54 +242,68 @@ public class FischertechnikWorkflow {
                         else {
                             events.add(PRODUCT_IN_SLIDER_EV);
                         }
-                        
-                    }, 
+                    },
                     4),
                 new Transition( // Transition 4
                     new LogicExpression<Event,Set<Event>>(
-                            LogicOperator.OR, 
+                            LogicOperator.OR,
                             List.of(PRODUCT_END_SLIDER_EV,
                                     PRODUCT_IN_CONVEYOR_EV)),
-                    null, 
+                    null,
                     (env, events) -> {
-                        System.out.println("Transition 4: Wait for product to arrive to milling station");
+                        logger.info("Transition 4: Wait for product to arrive to milling station");
                         
-                        if (!getSensor(env, 6) && !(Boolean)env.get(PRODUCT_READY_MILLING)) {
-                            logger.info("Product detected at milling station");
+                        if (!(Boolean)env.get(PRODUCT_READY_MILLING) && !getSensor(env, 6)) {
+                            logger.debug("Product detected at milling station");
                             setActuator(env, 6, false);
                             env.put(PRODUCT_READY_MILLING, Boolean.TRUE);
                         }
-                        if (getSensor(env, 2) && !(Boolean)env.get(SLIDER_1_ORIGIN)) {
-                            logger.info("Motor slider detected at starting position");
+                        if (!(Boolean)env.get(SLIDER_1_ORIGIN) && getSensor(env, 2)) {
+                            logger.debug("Motor slider detected at starting position");
                             events.add(MOTOR_SLIDER_ORIGIN_EV);
                             return;
                         }
                         if ((Boolean)env.get(PRODUCT_READY_MILLING) && (Boolean)env.get(SLIDER_1_ORIGIN)) {
-                            events.add(PRODUCT_READY_MILLING_EV);
+                            events.add(PRODUCT_IN_MILLING_EV);
                             return;
                         }
                         events.add(PRODUCT_IN_CONVEYOR_EV);
-                    }, 
+                    },
                     4),
                 new Transition( // Transition 5
                     new LogicExpression<Event,Set<Event>>(
-                            null, 
+                            null,
                             List.of(MOTOR_SLIDER_ORIGIN_EV)),
-                    null, 
+                    null,
                     (env, events) -> {
-                        System.out.println("Transition 5: Slider motor returned to starting position");
+                        logger.info("Transition 5: Slider motor returned to starting position");
                         setActuator(env, 2, false);
                         env.put(SLIDER_1_ORIGIN, Boolean.TRUE);
                         events.add(PRODUCT_IN_CONVEYOR_EV);
-                    }, 
+                    },
                     4),
+                /* Transition needed to change state from 4 to 5.
+                 * In the future each state will have a environment method that will solve this problem,
+                 * as the checks of values outside the state Machine and the throw of Events will be done
+                 * by those environment methods.
+                 */
                 new Transition( // Transition 6
                     new LogicExpression<Event,Set<Event>>(
-                            null, 
-                            List.of(PRODUCT_READY_MILLING_EV)),
-                    null, 
+                            null,
+                            List.of(PRODUCT_IN_MILLING_EV)),
+                    null,
                     (env, events) -> {
-                        System.out.println("Transition 6: Mill product");
+                        logger.info("Transition 6: Product ready for milling, change state");
+                        events.add(PRODUCT_READY_MILLING_EV);
+                    },
+                    5),
+                new Transition( // Transition 7
+                    new LogicExpression<Event,Set<Event>>(
+                            null,
+                            List.of(PRODUCT_READY_MILLING_EV)),
+                    null,
+                    (env, events) -> {
+                        logger.info("Transition 7: Mill product");
                         for(int i = 0; i < (int)env.get(NMILLING); i++) {
                             setActuator(env, 7, true);
                             try {
@@ -298,91 +314,126 @@ public class FischertechnikWorkflow {
                             }
                             setActuator(env, 7, false);
                         }
-//                        events.add(e);
-                    }, 
-                    5),
-//                new Transition(
-//                    new LogicExpression<Event,Set<Event>>(null, List.of(new Event(SERVICE_OK))),
-//                    null, 
-//                    (env, events) -> {
-//                        
-//                    }, 
-//                    9),
-//                new Transition(
-//                    new LogicExpression<Event,Set<Event>>(null, List.of(new Event(SERVICE_OK))),
-//                    null, 
-//                    (env, events) -> {
-//                        
-//                    }, 
-//                    10),
-//                new Transition(
-//                    new LogicExpression<Event,Set<Event>>(null, List.of(new Event(SERVICE_OK))),
-//                    null, 
-//                    (env, events) -> {
-//                        
-//                    }, 
-//                    11),
-//                new Transition(
-//                    new LogicExpression<Event,Set<Event>>(null, List.of(new Event(SERVICE_OK))),
-//                    null, 
-//                    (env, events) -> {
-//                        
-//                    }, 
-//                    12),
-//                new Transition(
-//                    new LogicExpression<Event,Set<Event>>(null, List.of(new Event(SERVICE_OK))),
-//                    null, 
-//                    (env, events) -> {
-//                        
-//                    }, 
-//                    13),
-//                new Transition(
-//                    new LogicExpression<Event,Set<Event>>(null, List.of(new Event(SERVICE_OK))),
-//                    null, 
-//                    (env, events) -> {
-//                        
-//                    }, 
-//                    14),
-//                new Transition(
-//                    new LogicExpression<Event,Set<Event>>(null, List.of(new Event(SERVICE_OK))),
-//                    null, 
-//                    (env, events) -> {
-//                        
-//                    }, 
-//                    15),
-//                new Transition(
-//                    new LogicExpression<Event,Set<Event>>(null, List.of(new Event(SERVICE_OK))),
-//                    null, 
-//                    (env, events) -> {
-//                        
-//                    }, 
-//                    16),
-                new Transition(
-                    new LogicExpression<Event,Set<Event>>(LogicOperator.OR, List.of(INIT_FAIL_EV)),
-                    null, 
+                        env.put(PRODUCT_DONE_MILLING, Boolean.TRUE);
+                        events.add(PRODUCT_END_MILLING_EV);
+                        // Milling conveyor
+                        setActuator(env, 6, true);
+                        // Drilling conveyor
+                        setActuator(env, 8, true);
+                    },
+                    6),
+                new Transition( // Transition 8
+                    new LogicExpression<Event,Set<Event>>(
+                            LogicOperator.OR,
+                            List.of(PRODUCT_END_MILLING_EV,
+                                    PRODUCT_IN_CONVEYOR_EV)),
+                    null,
                     (env, events) -> {
-                        System.out.println(env.get(ERROR_MESSAGE));
-                        
-                        // Stop factory
-                        setActuator(env, 1, false);
-                        setActuator(env, 2, false);
-                        setActuator(env, 3, false);
-                        setActuator(env, 4, false);
-                        setActuator(env, 5, false);
-                        setActuator(env, 6, false);
-                        setActuator(env, 7, false);
-                        setActuator(env, 8, false);
-                        setActuator(env, 9, false);
-                        setActuator(env, 10, false);
-                    }, 
-                    6)
+                        logger.info("Transition 8: Leave milling and drilling station");
+                        if(!getSensor(env, 8)) {
+                            setActuator(env, 6, false);
+                            logger.debug("Product detected at end of conveyor belt, "
+                                    + "wait 1,5 seconds before stopping the conveyor");
+                            try {
+                                Thread.sleep(1500);
+                            } catch (InterruptedException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                            // Stop drilling conveyor
+                            setActuator(env, 8, false);
+                            events.add(PRODUCT_END_CONVEYOR_EV);
+                            // Start slider motor 2
+                            setActuator(env, 3, true);
+                            env.put(SLIDER_2_ORIGIN, Boolean.FALSE);
+                        }else {
+                            events.add(PRODUCT_IN_CONVEYOR_EV);
+                        }
+                    },
+                    7),
+                new Transition( // Transition 9
+                    new LogicExpression<Event,Set<Event>>(
+                            LogicOperator.OR,
+                            List.of(PRODUCT_END_CONVEYOR_EV,
+                                    PRODUCT_IN_SLIDER_EV)),
+                    null,
+                    (env, events) -> {
+                        logger.info("Transition 9: Wait for product to leave slider motor 2");
+                        if (getSensor(env, 3)) {
+                            logger.debug("Product detected at end of slider motor, start output conveyor"
+                                    + "and push slider backwards");
+                            // Stop forward movement of slider motor 2
+                            setActuator(env, 3, false);
+                            // Start output conveyor
+                            setActuator(env, 10, true);
+                            // Start backwards movement of slider motor 2
+                            setActuator(env, 4, true);
+                            events.add(PRODUCT_END_SLIDER_EV);
+                        }
+                        else {
+                            events.add(PRODUCT_IN_SLIDER_EV);
+                        }
+                    },
+                    8),
+                new Transition( // Transition 10
+                    new LogicExpression<Event,Set<Event>>(
+                            LogicOperator.OR,
+                            List.of(PRODUCT_END_SLIDER_EV,
+                                    PRODUCT_IN_CONVEYOR_EV)),
+                    null,
+                    (env, events) -> {
+                        logger.info("Transition 10: Wait for product to arrive "
+                                + "to the end of factory");
+                        if (!(Boolean)env.get(PRODUCT_AT_OUTPUT) && !getSensor(env, 9)) {
+                            logger.debug("Product detected at output location");
+                            setActuator(env, 10, false);
+                            env.put(PRODUCT_AT_OUTPUT, Boolean.TRUE);
+                        }
+                        if (!(Boolean)env.get(SLIDER_2_ORIGIN) && getSensor(env, 4)) {
+                            logger.debug("Motor slider 2 detected at starting position");
+                            setActuator(env, 4, false);
+                            env.put(SLIDER_2_ORIGIN, Boolean.TRUE);
+                        }
+                        if ((Boolean)env.get(PRODUCT_AT_OUTPUT) && (Boolean)env.get(SLIDER_2_ORIGIN)) {
+                            events.add(PRODUCT_DONE_EV);
+                            return;
+                        }
+                        events.add(PRODUCT_IN_CONVEYOR_EV);
+                    },
+                    9),
+                new Transition( // Transition 11
+                    new LogicExpression<Event,Set<Event>>(
+                            null,
+                            List.of(PRODUCT_DONE_EV)),
+                    null,
+                    (env, events) -> {
+                        logger.info("Transition 11: Send success results and stop factory");
+                        // Set the results to be passed to the caller of State Machine in the environment
+                        env.put(STATE_MACHINE_RESULT, SUCCESS);
+                        logger.debug("At the end State Machine = " + env.get(STATE_MACHINE_RESULT));
+                        storeResultsAndStopFactory(env);
+                    },
+                    10),
+                new Transition( // Transition 12
+                    new LogicExpression<Event,Set<Event>>(
+                            LogicOperator.OR,
+                            List.of(INIT_FAIL_EV,
+                                    WORK_ERROR_EV)),
+                    null,
+                    (env, events) -> {
+                        logger.info("Transition 12: Send error results and stop factory");
+                        env.put(STATE_MACHINE_RESULT, ERROR);
+                        logger.debug("At the end State Machine = " + env.get(STATE_MACHINE_RESULT));
+                        logger.debug(env.get(ERROR_MESSAGE));
+                        storeResultsAndStopFactory(env);
+                    },
+                    11)
             )
         );
         
         Workflow millingWorkflow = new Workflow(workflowName, workflowConfig, workflowMachine);
         
         return millingWorkflow;
-        
     }
     
     public Workflow drilling() {
@@ -397,7 +448,6 @@ public class FischertechnikWorkflow {
         Workflow millingWorkflow = new Workflow(workflowName, workflowConfig, workflowMachine);
         
         return millingWorkflow;
-        
     }
     
     public Workflow millingAndDrilling() {
@@ -414,7 +464,6 @@ public class FischertechnikWorkflow {
         Workflow millingWorkflow = new Workflow(workflowName, workflowConfig, workflowMachine);
         
         return millingWorkflow;
-        
     }
     
     // Specific methods to use the Fischer factory
@@ -441,7 +490,6 @@ public class FischertechnikWorkflow {
         }
     }
     
-    
     /**
      * Gets the value of the sensor requested, always in the range 1-9
      * 
@@ -449,6 +497,7 @@ public class FischertechnikWorkflow {
      * @return The boolean value of the sensor
      * @throws IllegalArgumentException if the input number is out of the sensors id range
      */
+    @SuppressWarnings("unchecked")
     private Boolean getSensor(Map<String, Object> env, int sensorNumber) throws IllegalArgumentException{
         if(sensorNumber < 1 || sensorNumber > 9) {
             throw new IllegalArgumentException("The input sensor number is out of range, "
@@ -478,6 +527,7 @@ public class FischertechnikWorkflow {
      * @return The boolean value of the actuator
      * @throws IllegalArgumentException if the input number is out of the actuators id range
      */
+    @SuppressWarnings("unchecked")
     private Boolean getActuator(Map<String, Object> env, int actuatorNumber) throws IllegalArgumentException{
         if(actuatorNumber < 1 || actuatorNumber > 10) {
             throw new IllegalArgumentException("The input actuator number is out of range, "
@@ -508,7 +558,9 @@ public class FischertechnikWorkflow {
      * @return The boolean value of the actuator
      * @throws IllegalArgumentException if the input number is out of the actuators id range
      */
-    private Boolean setActuator(Map<String, Object> env, int actuatorNumber, Boolean value) throws IllegalArgumentException{
+    @SuppressWarnings("unchecked")
+    private Boolean setActuator(Map<String, Object> env, int actuatorNumber, Boolean value)
+            throws IllegalArgumentException{
         if(actuatorNumber < 1 || actuatorNumber > 10) {
             throw new IllegalArgumentException("The input actuator number is out of range, "
                     + "is has to be between 1 and 10");
@@ -540,6 +592,34 @@ public class FischertechnikWorkflow {
     private Boolean consumeFactoryService(OrchestrationResultDTO orch, HttpMethod method) {
         var serviceResult = consumeService(FactoryDeviceDTO.classReference(), orch, method, null, null);
         return Boolean.parseBoolean(serviceResult.getValue());
+    }
+    
+    private void storeResultsAndStopFactory (Map<String, Object> env) {
+        
+        
+        
+        // The results will be send by the Workflow Executor System at State Machine end
+//        try {
+//            var wManagerService = orchestrate(WMANAGER_RESULT_SERVICE_DEFINITION);
+//            if (env.get(STATE_MACHINE_RESULT).equals(SUCCESS)) {
+//                
+//            }
+//        }
+//        catch (ArrowheadException e) {
+//            logger.error("Workflow Manager was not found in local cloud,"
+//                    + "WManager system needed to send results of workflow");
+//        }
+        // Stop factory
+        setActuator(env, 1, false);
+        setActuator(env, 2, false);
+        setActuator(env, 3, false);
+        setActuator(env, 4, false);
+        setActuator(env, 5, false);
+        setActuator(env, 6, false);
+        setActuator(env, 7, false);
+        setActuator(env, 8, false);
+        setActuator(env, 9, false);
+        setActuator(env, 10, false);
     }
     
     // General methods to consumer Arrowhead services
@@ -601,11 +681,12 @@ public class FischertechnikWorkflow {
     
   //-------------------------------------------------------------------------------------------------
     private String getInterface() {
-        return sslProperties.isSslEnabled() ? WExecutorConstants.INTERFACE_SECURE : WExecutorConstants.INTERFACE_INSECURE;
+        return sslProperties.isSslEnabled()
+                ? WExecutorConstants.INTERFACE_SECURE
+                : WExecutorConstants.INTERFACE_INSECURE;
     }
     
     //-------------------------------------------------------------------------------------------------
-    
     /**
      * Calls a Http service to consume it, with the response wrapped in the type of the first argument provided.
      * <p>
