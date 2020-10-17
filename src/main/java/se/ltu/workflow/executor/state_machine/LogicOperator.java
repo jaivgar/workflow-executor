@@ -15,68 +15,72 @@ public enum LogicOperator {
 	
 	NOT{
 		@Override
-		public boolean evaluateOperator(final Boolean... operands) throws IllegalNumberOfOperandsException {
-			// NOT operations can only accept one operand
-			if(operands == null || operands.length != 1)
-			{
-				throw new IllegalNumberOfOperandsException("The operator NOT only accepts as "+
-																"input one operand");
-			}
-			else {
+		public boolean evaluateOperator(final Boolean... operands) {
 				return !operands[0];
-			}
 		}
+		
+		@Override
+        public void testValidOperator(int numberOperands) throws IllegalNumberOfOperandsException{
+            if(numberOperands != 1)
+            {
+                throw new IllegalNumberOfOperandsException(
+                        "The operator NOT only accepts as input one operand");
+            }
+        }
 	},
 	AND{
 		@Override
-		public boolean evaluateOperator(final Boolean... operands) throws IllegalNumberOfOperandsException {
-			// AND operations can only accept two or more operands
-			if(operands == null || operands.length < 2)
-			{
-				throw new IllegalNumberOfOperandsException("The operator AND only accepts as " +
-																"input two or more operands");
-			}
-			else {
-				for (int i= 0; i < operands.length; i++) {
-					if (operands[i] == false) {
-						return false;
-					}
+		public boolean evaluateOperator(final Boolean... operands) {
+			for (int i= 0; i < operands.length; i++) {
+				if (operands[i] == false) {
+					return false;
 				}
-				return true;
 			}
+			return true;
 		}
+		
+		@Override
+        public void testValidOperator(int numberOperands) throws IllegalNumberOfOperandsException {
+            if(numberOperands < 2)
+            {
+                throw new IllegalNumberOfOperandsException(
+                        "The operator AND only accepts as input two or more operands");
+            }
+        }
 	},
 	OR{
 		@Override
-		public boolean evaluateOperator(final Boolean... operands) throws IllegalNumberOfOperandsException {
-			// OR operations can only accept two or more operands
-			if(operands == null || operands.length < 2)
-			{
-				throw new IllegalNumberOfOperandsException("The operator OR only accepts as " + 
-																"input two or more operands");
-			}
-			else {
-				for (int i= 0; i < operands.length; i++) {
-					if (operands[i] == true) {
-						return true;
-					}
+		public boolean evaluateOperator(final Boolean... operands) {
+			for (int i= 0; i < operands.length; i++) {
+				if (operands[i] == true) {
+					return true;
 				}
-				return false;
 			}
+			return false;
 		}
+		
+		@Override
+        public void testValidOperator(int numberOperands) throws IllegalNumberOfOperandsException {
+		    if(numberOperands < 2)
+            {
+                throw new IllegalNumberOfOperandsException(
+                        "The operator OR only accepts as input two or more operands");
+            }
+        }
 	},
 	XOR{
 		@Override
-		public boolean evaluateOperator(final Boolean... operands) throws IllegalNumberOfOperandsException {
-			// XOR operations can only accept two operands
-			if(operands == null || operands.length != 2)
-			{
-				throw new IllegalNumberOfOperandsException("The operator XOR only accepts as " + 
-																"input two operands");
-			}
-			else {
-				return operands[0] != operands[1];
-			}
+		public boolean evaluateOperator(final Boolean... operands){
+			return operands[0] != operands[1];
+		}
+		
+		@Override
+		public void testValidOperator(int numberOperands) throws IllegalNumberOfOperandsException {
+            if(numberOperands != 2)
+            {
+                throw new IllegalNumberOfOperandsException(
+                        "The operator XOR only accepts as input two operands");
+            }
 		}
 	};
 	
@@ -85,6 +89,16 @@ public enum LogicOperator {
 	 * 
 	 * @param operands  The array of operands as boolean variables that will be used by the operators
 	 */
-	public abstract boolean evaluateOperator(final Boolean... operands) throws IllegalNumberOfOperandsException;
+	public abstract boolean evaluateOperator(final Boolean... operands);
+	
+	/**
+	 * Test if the {@code LogicOperator} can be used to evaluate that number of operands
+	 * 
+	 * @param numberOperands  The number of operands to test again the {@code LogicOperator}
+	 * 
+	 * @throws IllegalNumberOfOperandsException  if the {@code LogicOperator} can not handle the
+	 * introduced number of operands
+	 */
+	public abstract void testValidOperator(int numberOperands) throws IllegalNumberOfOperandsException;
 
 }

@@ -8,7 +8,7 @@ package se.ltu.workflow.executor.state_machine;
  *
  */
 @SuppressWarnings("serial")
-public class IllegalNumberOfOperandsException extends Exception{
+public class IllegalNumberOfOperandsException extends RuntimeException {
 	
     /**
      * Constructs a new exception with the specified message.

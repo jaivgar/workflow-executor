@@ -75,9 +75,14 @@ public class StateMachine {
      * @param transitions  The list of transitions part of this State Machine
      * @param currentState  The initial state
      * 
+     * @throws IllegalArgumentException  if there are errors present when creating the
+     * State Machine, like two states with the same name, or states with transitions that
+     * do not exist or transitions pointing to states that do not exist
+     * 
      * @see #checkStateMachine(List, List)
      */
-    public StateMachine(final List<State> states, final List<Transition> transitions, final int currentState) {
+    public StateMachine(final List<State> states, final List<Transition> transitions, final int currentState)
+        throws IllegalArgumentException {
         
         /* Check consistency of State Machine before creating the object:
          *  - States should not point to Transitions that do not exist
@@ -231,7 +236,7 @@ public class StateMachine {
              */
             if(transition.event() != null) {
                 try {
-					if (!transition.event().testLogicExpression(events)) {
+					if (!transition.event().evaluateLogicExpression(events)) {
 					    continue;
 					}
 				} catch (IllegalLogicExpressionException e) {
@@ -249,7 +254,7 @@ public class StateMachine {
              */
             if(transition.guard() != null) {
             	try {
-					if (!transition.guard().testLogicExpression(environment)) {
+					if (!transition.guard().evaluateLogicExpression(environment)) {
 					    continue;
 					}
 				} catch (IllegalLogicExpressionException e) {

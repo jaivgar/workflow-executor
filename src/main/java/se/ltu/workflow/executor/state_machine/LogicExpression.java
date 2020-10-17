@@ -25,13 +25,17 @@ public class LogicExpression<E extends Evaluable<C>, C> {
 	private final LogicOperator operator;
 	private final Collection<E> operands;
 	
-	public LogicExpression(LogicOperator operator, Collection<E> operands) {
+	public LogicExpression(LogicOperator operator, Collection<E> operands) 
+	        throws IllegalNumberOfOperandsException {
+	    
+	    testValidLogicExpression(operator, operands);
+	    
 		this.operator = operator;
 		this.operands = operands;
 	}
 	
 	/**
-	 * Test if the logic expression is true, in a 2 step process.<br>
+	 * Evaluates the logic expression to true or false, in a 2 step process.<br>
 	 * First checks if each operand is true or false in this context, then
 	 * test those boolean values with respect to the operator chosen.
 	 * 
@@ -43,7 +47,7 @@ public class LogicExpression<E extends Evaluable<C>, C> {
 	 * @throws IllegalLogicExpressionException if the logic expression is
 	 * missing the logic operator and has more than one operand
 	 */
-	public boolean testLogicExpression(C context) throws IllegalLogicExpressionException {
+	public boolean evaluateLogicExpression(C context) throws IllegalLogicExpressionException {
 		
 		// No need to check for null, as is previously tested in update() method in StateMachine class
 		/*if (operands == null) {
@@ -54,32 +58,36 @@ public class LogicExpression<E extends Evaluable<C>, C> {
 		for(E e: operands){
 			operandsEvaluated.add(e.evaluate(context));
 		}
-		
 		boolean result;
 		if (operator == null) {
 			if (operands.size() != 1) {
-				throw new IllegalLogicExpressionException("LogicExpression needs a LogicOperator " + 
-															"if more than one operand");
+				throw new IllegalLogicExpressionException(
+				        "LogicExpression needs a LogicOperator if more than one operand");
 			}
 			else {
 				result = operandsEvaluated.get(0);
 			}
 		}
 		else {
-			try {
-				result = operator.evaluateOperator(operandsEvaluated
-													.toArray(new Boolean[operandsEvaluated.size()]));
-			} catch (IllegalNumberOfOperandsException e1) {
-				// For debugging
-				System.out.println("Before exception the Operator was \"" + this.operator 
-						+ "\" and the number of operands: " + operandsEvaluated.size());
-				
-				//TODO: Not sure if I should let the program continue or stop it with System.exit(0)
-				//TODO Should I catch the exception or propagate it...
-				e1.printStackTrace();
-				result = false;
-			}
+				result = operator.evaluateOperator(
+				        operandsEvaluated.toArray(new Boolean[operandsEvaluated.size()]));
 		}
 		return result;
+	}
+	
+	/**
+	 * Test each logic expression and creation time to verify that the combination of
+	 * operands and operator is valid.
+	 * 
+	 * @param operator  The operator used to create this {@code LogicExpression}
+     * @param operands  The operands used to create this {@code LogicExpression}
+	 * 
+	 * @throws IllegalNumberOfOperandsException  If the number of operands for that
+	 * operator is invalid
+	 */
+	private void testValidLogicExpression(LogicOperator operator, Collection<E> operands)
+	        throws IllegalNumberOfOperandsException {
+	    if (operator == null) return;
+	    operator.testValidOperator(operands.size());
 	}
 }

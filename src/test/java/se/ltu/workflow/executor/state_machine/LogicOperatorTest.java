@@ -24,7 +24,7 @@ class LogicOperatorTest {
 	final void testEvaluateNotOperator() {
 		
 		assertThrows(IllegalNumberOfOperandsException.class, () -> {
-				LogicOperator.NOT.evaluateOperator(truths);
+				LogicOperator.NOT.testValidOperator(truths.length);
 			}
 			,"A logic operator NOT should only accept one operand, not more"
 		);
@@ -48,7 +48,7 @@ class LogicOperatorTest {
 	final void testEvaluateAndOperator() {
 		
 		assertThrows(IllegalNumberOfOperandsException.class, () -> {
-				LogicOperator.AND.evaluateOperator(oneTruth);
+				LogicOperator.AND.testValidOperator(oneTruth ? 1:1);
 			}
 			,"A logic operator AND should only accept two or more operands, not one"
 		);
@@ -72,7 +72,7 @@ class LogicOperatorTest {
 	final void testEvaluateOrOperator() {
 		
 		assertThrows(IllegalNumberOfOperandsException.class, () -> {
-				LogicOperator.OR.evaluateOperator(oneTruth);
+				LogicOperator.OR.testValidOperator(oneTruth ? 1:1);
 			}
 			,"A logic operator OR should only accept two or more operands, not one"
 		);
@@ -95,13 +95,13 @@ class LogicOperatorTest {
 	@Test
 	final void testEvaluateXorOperator() {
 		assertThrows(IllegalNumberOfOperandsException.class, () -> {
-				LogicOperator.XOR.evaluateOperator(oneTruth);
+				LogicOperator.XOR.testValidOperator(oneTruth ? 1:1);
 			}
 			,"A logic operator OR should only accept two, not one or more than two"
 		);
 		
 		assertThrows(IllegalNumberOfOperandsException.class, () -> {
-				LogicOperator.XOR.evaluateOperator(falsities);
+				LogicOperator.XOR.testValidOperator(falsities.length);
 			}
 			,"A logic operator OR should only accept two, not one or more than two"
 		);
