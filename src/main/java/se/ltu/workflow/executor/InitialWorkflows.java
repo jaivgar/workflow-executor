@@ -90,8 +90,8 @@ public class InitialWorkflows {
     @PostConstruct
     private void initConfig() {
         workflowsInput.add(factoryWorkflows.milling());
-//      workflowsInput.add(factoryWorkflows.drilling());
-//      workflowsInput.add(factoryWorkflows.millingAndDrilling());
+        workflowsInput.add(factoryWorkflows.drilling());
+        workflowsInput.add(factoryWorkflows.millingAndDrilling());
     }
     
     public Set<Workflow> getWorkflows() {
