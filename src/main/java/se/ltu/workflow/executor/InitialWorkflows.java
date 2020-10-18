@@ -375,10 +375,11 @@ public class InitialWorkflows {
                             
                             System.out.println("Transition 4: End State Machine and output its results");
                             if (env.containsKey("Error")) {
-                                env.put("OutputStateMachine", 500);
+                                env.put(WExecutorConstants.STATE_MACHINE_RESULT, WExecutorConstants.ERROR);
+                                env.put(WExecutorConstants.ERROR_MESSAGE, env.get("Error"));
                             }
                             else {
-                                env.put("OutputStateMachine", 200);
+                                env.put(WExecutorConstants.STATE_MACHINE_RESULT, WExecutorConstants.SUCCESS);
                             }
 
                             printEvents(events, "end of State Machine");

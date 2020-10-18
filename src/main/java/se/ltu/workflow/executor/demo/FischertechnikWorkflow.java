@@ -96,7 +96,7 @@ public class FischertechnikWorkflow {
     private static final String SLIDER_1_ORIGIN = "Slider 1 at starting position";
     private static final String SLIDER_2_ORIGIN = "Slider 2 at starting position";
     
-    private static final String STATE_MACHINE_RESULT = "State Machine result";
+    private static final String STATE_MACHINE_RESULT = "State machine result";
     private static final String SUCCESS = "success";
     private static final String ERROR = "error";
     private static final String ERROR_MESSAGE = "Error message";

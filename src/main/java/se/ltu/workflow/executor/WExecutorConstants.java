@@ -32,6 +32,14 @@ public class WExecutorConstants {
 
     // Workflow Manager constants
     public static final String WMANAGER_RESULT_SERVICE_DEFINITION = "wmanager-operation-results";
+    public static final String WMANAGER_URI = "/workflow_manager";
+    public static final String ECHO_URI = "/echo";
+    
+    // Constants to be used in State Machine to report results
+    public static final String STATE_MACHINE_RESULT = "State machine result";
+    public static final String SUCCESS = "success";
+    public static final String ERROR = "error";
+    public static final String ERROR_MESSAGE = "Error message";
     
     /**
      * Do not create an instance of a class used to hold constants
