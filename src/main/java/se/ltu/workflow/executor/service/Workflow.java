@@ -36,13 +36,7 @@ public class Workflow {
      */
     final static String WORKFLOW_END_SUCCESS = "END-OK";
     
-    /**
-     * Name of the environment variable inside the State Machines that represents an error message
-     */
-    final static String WORKFLOW_ERROR_MSG = "Error";
-    
     /* Add variable to store Workflow results?
-     * Not needed if we can use workflowConfig, if it is a mutable Map.
      * However what class should be used to store Workflow results? It depends on 
      * the Workflow so unless using generics, the user will have to cast later.
      */
@@ -111,6 +105,9 @@ public class Workflow {
     }
 
     public Boolean getSuccess() {
+        if(workflowStatus!=WStatus.DONE)
+            throw  new IllegalStateException(
+                    "The success of a Workflow can only be requested after executing the Workflow");
         return success;
     }
 
@@ -119,6 +116,9 @@ public class Workflow {
     }
 
     public Optional<String> getPossibleErrorMessage() {
+        if(workflowStatus!=WStatus.DONE)
+            throw  new IllegalStateException(
+                    "The error message of a Workflow can only be requested after executing the Workflow");
         return errorMessage;
     }
 
@@ -135,11 +135,8 @@ public class Workflow {
      * This method has a pre-condition: the Workflow from which it is called must be in ACTIVE state,
      * otherwise it will throw an {@code IllegalStateException}.
      * 
-     * 
-     * @return The same as in {@link se.ltu.workflow.executor.state_machine.StateMachine#update()}. 
-     * True when the workflow can keep executing, false otherwise.
      */
-    public Boolean executeWorkflow() {
+    public void executeWorkflow() {
         if (this.getWorkflowStatus() != WStatus.ACTIVE) {
             throw new IllegalStateException("Workflow is not ACTIVE yet, so it should not be executed");
         }
@@ -183,10 +180,8 @@ public class Workflow {
             
         // Set to status DONE the Workflow executed
         this.setWorkflowStatus(WStatus.DONE);
-        logger.info("Workflow status set to " + WStatus.DONE);
-        // Return the result? Or nothing?
-        return false;
-        
+        logger.info("Workflow status of " + this.getWorkflowName() + " set to " + WStatus.DONE);
+        // The results are inside the WorkflowLogic to be retrieved when needed
     }
     
     /**
@@ -198,22 +193,29 @@ public class Workflow {
      * <p>
      * Implementation status: At the moment the outputs are not stored anywhere. 
      * 
-     * @return True when the Workflow ends successfully, which now is always the case
+     * @return True when the Workflow ends successfully, false otherwise
      */
     public Boolean endWorkflow() {
         if (this.getWorkflowStatus() != WStatus.DONE) {
             throw new IllegalStateException("Workflow is not DONE yet, so it should not be ended");
         }
         
-        //cleanWorkflow();
-        if (this.getWorkflowLogic().getEvents().contains(new Event(WORKFLOW_END_SUCCESS))) {
-            this.setSuccess(true);
-            logger.info("Workflow " + this.getWorkflowName() + " finished successfully");
+//        cleanWorkflow();
+//        if (this.getWorkflowLogic().getEvents().contains(new Event(WORKFLOW_END_SUCCESS))) {
+//            this.setSuccess(true);
+//            logger.info("Workflow " + this.getWorkflowName() + " finished successfully");
+//        }
+        
+        if(this.getWorkflowLogic().getEnvironment().containsKey(WExecutorConstants.STATE_MACHINE_RESULT)) {
+            if(this.getWorkflowLogic().getEnvironment().get(WExecutorConstants.STATE_MACHINE_RESULT)
+                    .equals(WExecutorConstants.SUCCESS)) {
+                this.setSuccess(true);
+                logger.info("Workflow " + this.getWorkflowName() + " finished successfully");
+                return this.getSuccess();
+            }
         }
-        else{
-            this.failWorkflow();
-            logger.info("Workflow " + this.getWorkflowName() + " finished with error");
-        }
+        this.failWorkflow();
+        logger.info("Workflow " + this.getWorkflowName() + " finished with error");
         return this.getSuccess();
     }
     
@@ -221,7 +223,7 @@ public class Workflow {
         this.setSuccess(false);
         try {
             this.setErrorMessage(Optional.of(
-                    (String)(this.getWorkflowLogic().getEnvironment().get(WORKFLOW_ERROR_MSG))));
+                    (String)(this.getWorkflowLogic().getEnvironment().get(WExecutorConstants.ERROR_MESSAGE))));
         }catch (NullPointerException e) {
             this.setErrorMessage(Optional.of("Workflow did not specify error message"));
         }
@@ -237,9 +239,16 @@ public class Workflow {
      * neither the Environment
      */
     public void cleanWorkflow() {
-        // Can not clean Events and Environment of State Machine, no methods available?
+        try {
+            this.workflowLogic.getEvents().clear();
+            this.workflowLogic.getEnvironment().clear();
+            this.workflowConfig.clear();
+        } catch (UnsupportedOperationException e) {
+            logger.error("This State Machine does not support the removal of the configuration "
+                    + "or events or environment");
+            e.printStackTrace();
+        }
         this.workflowLogic.setCurrentState(0);
-
     }
     
     /**

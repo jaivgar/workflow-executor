@@ -15,6 +15,7 @@ public class FinishWorkflowDTO {
     final private String workflowName;
     final private WStatus workflowStatus;
     final private Boolean success;
+    // In the future errorMessage should be an optional field
     final private String errorMessage;
     final private ZonedDateTime queueTime;
     final private ZonedDateTime startTime;
@@ -33,6 +34,22 @@ public class FinishWorkflowDTO {
                 + " in Workflow Executor system, startTime");
         this.endTime = Objects.requireNonNull(endTime, "Expected the time when workflow was finished"
               + " in Workflow Executor system, endTime");
+    }
+    
+    /**
+     * Creates an empty object.
+     * <p>
+     * To be used only as a reference to infer the class, not as a proper Object.
+     */
+    private FinishWorkflowDTO() {
+        id = -1;
+        workflowName = null;
+        workflowStatus = null;
+        success = null;
+        errorMessage = null;
+        queueTime = null;
+        startTime = null;
+        endTime = null;
     }
     
     /**
@@ -61,6 +78,15 @@ public class FinishWorkflowDTO {
                                     finishedWorkflow.getEndTime());
         
         throw new IllegalArgumentException("Workflow is not finished yet to create this DTO from it");
+    }
+    
+    /**
+     * Creates an empty FinishWorkflowDTO object.
+     * <p>
+     * To be used only as a reference to infer the class, not as a proper Object to test its values.
+     */
+    public static FinishWorkflowDTO classReference() {
+        return new FinishWorkflowDTO();
     }
 
     public int getId() {

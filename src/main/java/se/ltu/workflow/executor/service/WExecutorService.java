@@ -13,9 +13,16 @@ import javax.annotation.PostConstruct;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.dto.shared.OrchestrationResultDTO;
+import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.UnavailableServerException;
 import se.ltu.workflow.executor.InitialWorkflows;
+import se.ltu.workflow.executor.WExecutorConstants;
+import se.ltu.workflow.executor.arrowhead.WExecutorUtils;
+import se.ltu.workflow.executor.dto.FinishWorkflowDTO;
 
 @Service
 public class WExecutorService {
@@ -34,6 +41,8 @@ public class WExecutorService {
      * simultaneous writes.
      */
     final private BlockingQueue<QueuedWorkflow> workflowsForExecution;
+    
+    private OrchestrationResultDTO WManagerService;
     
     final private Thread workflowsExecuting;
     
@@ -58,32 +67,33 @@ public class WExecutorService {
                      */
                     workflowsForExecution.put(workflowOngoing);
                     
-                    logger.info("Consuming Workflow " + workflowOngoing.getWorkflowName() + " with ID=" + workflowOngoing.getId());
+                    logger.info("Consuming Workflow " + workflowOngoing.getWorkflowName()
+                        + " with ID=" + workflowOngoing.getId());
                     
                     // Set this Workflow as the active one
                     workflowOngoing.setWorkflowStatus(WStatus.ACTIVE);
                     
                     
-                    // This method will trigger the execution of the State Machine as the representation of the Workflow
+                    /* This method will trigger the execution of the State Machine as the representation
+                     * of the Workflow
+                     */
                     workflowOngoing.executeWorkflow();
                     logger.info("The Workflow entered queue at: " + workflowOngoing.getQueueTime());
                     logger.info("The Workflow started at: " + workflowOngoing.getStartTime());
                     logger.info("The Workflow finished at: " + workflowOngoing.getEndTime());
                     
-                    /* The WorkflowExecutor should not look inside the State Machine, that logic should be part
-                     * of the State Machine itself, looking for errors or success in his last transition
+                    /* Look at results of workflow provided inside State Machine as agreed upon
+                     * variables stored in the environment
                      */
-                    // This is one way to obtain results from a State Machine, in this State Machine we use similar HTTP codes
-//                    if((int)workflowOngoing.getWorkflowLogic().getEnvironment().get("OutputStateMachine") == 200) {
-//                        logger.info("The Workflow ended succesfully");
-//                    }
+                    sendWorkflowResults(workflowOngoing);
                     
                     // Remove Workflow from Queue after its execution
                     workflowsForExecution.take();
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
-                logger.error("Thread executing State Machines inside WExecutorService has runned into problem");
+                logger.error("Thread executing State Machines inside WExecutorService has been "
+                        + "unexpectedly interrupted, shutting down Workflow Executor");
                 System.exit(1);
             }
         };
@@ -119,9 +129,9 @@ public class WExecutorService {
         /* One Option was to use the contains() method of Set class, that required to Override the default
          * equals() method of Object class and to create a Workflow with only a name and config to compare.
          * 
-         * But then to retrieve it we will have to iterate through the set, therefore it seems more straightforward
-         * to iterate through the elements from the start, and compare each time with the reference. This also enables
-         * to stop when we find our target.
+         * But then to retrieve it we will have to iterate through the set, therefore it seems
+         * more straightforward to iterate through the elements from the start, and compare each
+         * time with the reference. This also enables to stop when we find our target.
          */
         Workflow requestedWorkflow = new Workflow(workflowName, workflowConfig, null);
         for (Workflow w : workflowsStored) {
@@ -130,11 +140,13 @@ public class WExecutorService {
                     requestedWorkflow = new Workflow(w);
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
-                    logger.error("The Workflow stored does not support execution, due to problem when copying"
-                            + "its Workflow Configuration, repair WorkflowConfiguration Map implementation.");
+                    logger.error("The Workflow stored does not support execution, "
+                            + "due to problem when copying its Workflow Configuration, "
+                            + "repair WorkflowConfiguration Map implementation.");
                     return null;
                 }
-                logger.info("Workflow with requested parameter found in memory: " + requestedWorkflow.getWorkflowName());
+                logger.info("Workflow with requested parameter found in memory: "
+                        + requestedWorkflow.getWorkflowName());
                 break;
             }
         }
@@ -153,13 +165,71 @@ public class WExecutorService {
         try {
             workflowsForExecution.add(toExecuteWork);
         } catch (IllegalStateException e) {
-            logger.error("The capacity of internal memory of Workflow Executor is full, too many Workflows waiting to be executed");
+            logger.error("The capacity of internal memory of Workflow Executor is full, "
+                    + "too many Workflows waiting to be executed");
         }
         
         // A thread is forever running checking for Workflows in the Queue
         
         // Return the created QueuedWorkflow, the same reference as the one added to the Queue
         return toExecuteWork;
+    }
+    
+    /**
+     * Sends workflow results to Workflow Manager
+     * 
+     * @param finishedWorkflow  The workflow to extract the results from
+     */
+    private void sendWorkflowResults(QueuedWorkflow finishedWorkflow) {
+        // Check that a reference to WManager exist in memory
+        try {
+            if(WManagerService == null)
+                WManagerService = WExecutorUtils
+                    .orchestrate(WExecutorConstants.WMANAGER_RESULT_SERVICE_DEFINITION);
+        } catch (ArrowheadException e) {
+            logger.warn("Workflow Manager is not present in Workstation");
+            return;
+        }
+        // Check that the WManager is still alive at stored address by sending an echo request
+        try {
+            var echoWManagerService = new OrchestrationResultDTO(
+                    WManagerService.getProvider(),
+                    // We really do not care about Service, as echo is not registered in service registry
+                    WManagerService.getService(),
+                    WManagerService.getServiceUri(),
+                    WManagerService.getSecure(),
+                    WManagerService.getMetadata(),
+                    WManagerService.getInterfaces(),
+                    WManagerService.getVersion());
+            // Modify URI for echo service
+            echoWManagerService.setServiceUri(WExecutorConstants.WMANAGER_URI + WExecutorConstants.ECHO_URI);
+            
+            WExecutorUtils.consumeService(
+                    String.class,
+                    echoWManagerService,
+                    HttpMethod.GET,
+                    "",
+                    null,
+                    null);
+        } catch (UnavailableServerException e) {
+            logger.warn("Workflow Manager is not present anymore in Workstation or change address,"
+                    + "retrying orchestration");
+            try {
+                WManagerService = WExecutorUtils
+                    .orchestrate(WExecutorConstants.WMANAGER_RESULT_SERVICE_DEFINITION);
+            } catch (ArrowheadException e2) {
+                logger.warn("Workflow Manager is not present in Workstation");
+                return;
+            }
+        }
+        
+        WExecutorUtils.consumeService(
+                null,
+                WManagerService,
+                HttpMethod.PUT,
+                "/" + finishedWorkflow.getId(),
+                FinishWorkflowDTO.fromQueuedWorkflow(finishedWorkflow),
+                null);
     }
     
     /**
