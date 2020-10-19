@@ -202,15 +202,17 @@ public class WExecutorService {
                     WManagerService.getInterfaces(),
                     WManagerService.getVersion());
             // Modify URI for echo service
-            echoWManagerService.setServiceUri(WExecutorConstants.WMANAGER_URI + WExecutorConstants.ECHO_URI);
+            echoWManagerService.setServiceUri(
+                    WExecutorConstants.WMANAGER_URI + WExecutorConstants.ECHO_URI);
             
-            WExecutorUtils.consumeService(
+            var echoResponse = WExecutorUtils.consumeService(
                     String.class,
                     echoWManagerService,
                     HttpMethod.GET,
-                    "",
+                    null,
                     null,
                     null);
+            logger.debug("Workflow Manager answered echo with: " + echoResponse);
         } catch (UnavailableServerException e) {
             logger.warn("Workflow Manager is not present anymore in Workstation or change address,"
                     + "retrying orchestration");
@@ -223,13 +225,15 @@ public class WExecutorService {
             }
         }
         
-        WExecutorUtils.consumeService(
-                null,
+        var WManagerResponse = WExecutorUtils.consumeService(
+                String.class, // This parameter can not be null, but we do not care about the response
                 WManagerService,
-                HttpMethod.PUT,
-                "/" + finishedWorkflow.getId(),
+                HttpMethod.POST,
+                null,
                 FinishWorkflowDTO.fromQueuedWorkflow(finishedWorkflow),
                 null);
+        logger.info("WManager received result results of workflow: "
+                + "id = " + finishedWorkflow.getId() + ", workflowName = " + finishedWorkflow.getWorkflowName());
     }
     
     /**

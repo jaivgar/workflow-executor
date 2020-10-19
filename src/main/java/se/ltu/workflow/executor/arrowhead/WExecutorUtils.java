@@ -102,6 +102,7 @@ public class WExecutorUtils {
     }
     
     //-------------------------------------------------------------------------------------------------
+    
     /**
      * Calls a Http service to consume it, with the response wrapped in the type of the first argument provided.
      * <p>
@@ -111,19 +112,24 @@ public class WExecutorUtils {
      * Depending on the service, to consume it we might need to provide a payload or metadata, which are optional
      * parameters for this method.
      * 
-     * @param <T>
-     * @param ResponseDTO
-     * @param orchestrationResult
-     * @param payload
-     * @param metadata
-     * @return
+     * @param <T>  Usually a DTO class that can be mapped to the response of the Http request
+     * @param ResponseDTO  The type of DTO class used to receive the body of the response
+     * @param orchestrationResult  The results of asking for orchestration in Arrowhead
+     * @param method  The HTTP method used to consume the service
+     * @param extraPath  Path that be added to the URI of the service retrieved from service registry, can be null
+     * @param payload  The body of the request, can be null
+     * @param metadata  The metadata that can be send with the request, can be null
+     * 
+     * @return  The response body of the Http request wrapped in the class specified by &ltT&gt
      */
-    public static <T> T consumeService(T ResponseDTO, final OrchestrationResultDTO orchestrationResult,
+    public static <T> T consumeService(final Class<T> ResponseDTOType, final OrchestrationResultDTO orchestrationResult,
             final HttpMethod method, String extraPath, final Object payload, final String[] metadata) {
         final String token = orchestrationResult.getAuthorizationTokens() == null ? null : orchestrationResult.getAuthorizationTokens().get(getInterface());
 
+        if(extraPath == null) extraPath = "";
+        
         return (T) arrowheadService.consumeServiceHTTP(
-                ResponseDTO.getClass(), // The type of object that the Response will be matched to
+                ResponseDTOType, // The type of object that the Response will be matched to
                 method,
                 orchestrationResult.getProvider().getAddress(), 
                 orchestrationResult.getProvider().getPort(), 

@@ -68,7 +68,7 @@ public class FinishWorkflowDTO {
         }
         
         if (finishedWorkflow.getWorkflowStatus().equals(WStatus.DONE))
-            new FinishWorkflowDTO(finishedWorkflow.getId(), 
+            return new FinishWorkflowDTO(finishedWorkflow.getId(),
                                     finishedWorkflow.getWorkflowName(),
                                     finishedWorkflow.getWorkflowStatus(),
                                     finishedWorkflow.getSuccess(),

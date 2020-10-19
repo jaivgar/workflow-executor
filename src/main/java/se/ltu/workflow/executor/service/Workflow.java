@@ -119,7 +119,9 @@ public class Workflow {
         if(workflowStatus!=WStatus.DONE)
             throw  new IllegalStateException(
                     "The error message of a Workflow can only be requested after executing the Workflow");
-        return errorMessage;
+        if(errorMessage != null) return errorMessage;
+        return Optional.empty();
+        
     }
 
     public void setErrorMessage(Optional<String> errorMessage) {
