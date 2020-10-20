@@ -57,6 +57,13 @@ public class FischertechnikWorkflow {
     protected SSLProperties sslProperties;
     
     /**
+     * Name of workflows created in this class
+     */
+    private static final String WORKFLOW_NAME_MILL = "milling";
+    private static final String WORKFLOW_NAME_DRILL = "drilling";
+    private static final String WORKFLOW_NAME_MILL_AND_DRILL = "millingAndDrilling";
+    
+    /**
      * Service definitions of services needed to operate Fischer factory
      */
     private static List<String> servicesFactory = List.of("sensorvalue", "actuatorvalue");
@@ -109,7 +116,7 @@ public class FischertechnikWorkflow {
     private final Logger logger = LogManager.getLogger(FischertechnikWorkflow.class);
     
     public Workflow milling() {
-        String workflowName = "milling";
+        String workflowName = WORKFLOW_NAME_MILL;
         
         Map<String, List<String>> workflowConfig = new HashMap<>(Map.ofEntries(
                 Map.entry(NMILLING, new ArrayList<>(List.of("Integer")) ),
@@ -769,7 +776,7 @@ public class FischertechnikWorkflow {
     }
     
     public Workflow millingAndDrilling() {
-        String workflowName = "millingAndDrilling";
+        String workflowName = WORKFLOW_NAME_MILL_AND_DRILL;
         
         Map<String, List<String>> workflowConfig = new HashMap<>(Map.ofEntries(
                 Map.entry(NMILLING, new ArrayList<>(List.of("Integer")) ),
