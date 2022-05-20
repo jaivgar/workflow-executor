@@ -1085,9 +1085,17 @@ public class FischertechnikWorkflow {
                         logger.info("Transition 11: Read sensor at the end of output conveyor");
                         if (!(Boolean)env.get(PRODUCT_AT_OUTPUT) && !getSensor(env, 9)) {
                             logger.debug("Product detected at output location");
+                            // TODO: Add a timer so that product reaches end of conveyor belt, instead of
+                            // being stop at the sensor (for use with ROS robot)
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                             setActuator(env, 10, false);
                             env.put(PRODUCT_AT_OUTPUT, Boolean.TRUE);
                         }
+                        // Check that motor returned to starting position
                         if (!(Boolean)env.get(SLIDER_2_ORIGIN) && getSensor(env, 4)) {
                             logger.debug("Motor slider 2 detected at starting position");
                             setActuator(env, 4, false);
